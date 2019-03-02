@@ -1,6 +1,6 @@
 # Crafting Interpreters using Rust
 
-Just my perusal of Bob Nystrom's (Crafting Interpreters)[http://craftinginterpreters.com/] book. Since I've been on a Rust kick, I'm trying to use that instead of Java (which I don't particularly like).
+Just my perusal of Bob Nystrom's [Crafting Interpreters](http://craftinginterpreters.com/) book. Since I've been on a Rust kick, I'm trying to use that instead of Java (which I don't particularly like).
 
 I'll be going in order and marking the chapters off as I make my way through them. If I somehow find the time I might blog about any thing weird or that trips me up along the way.
 
