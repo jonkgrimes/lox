@@ -1,8 +1,32 @@
 use std::fmt;
 use std::fmt::Display;
 use std::iter::{Peekable, Enumerate};
+use std::collections::HashMap;
 
 use crate::token::{Token, TokenType};
+
+lazy_static! {
+    static ref KEYWORDS: HashMap<&'static str, TokenType> = {
+        let mut keywords = HashMap::new();
+        keywords.insert("and",    TokenType::And);                       
+        keywords.insert("class",  TokenType::Class);                     
+        keywords.insert("else",   TokenType::Else);                      
+        keywords.insert("false",  TokenType::False);                     
+        keywords.insert("for",    TokenType::For);                       
+        keywords.insert("fun",    TokenType::Fun);                       
+        keywords.insert("if",     TokenType::If);                        
+        keywords.insert("nil",    TokenType::Nil);                       
+        keywords.insert("or",     TokenType::Or);                        
+        keywords.insert("print",  TokenType::Print);                     
+        keywords.insert("return", TokenType::Return);                    
+        keywords.insert("super",  TokenType::Super);                     
+        keywords.insert("this",   TokenType::This);                      
+        keywords.insert("true",   TokenType::True);                      
+        keywords.insert("var",    TokenType::Var);                       
+        keywords.insert("while",  TokenType::While);   
+        keywords
+    };
+}
 
 pub struct Scanner {
     source: String,
@@ -42,6 +66,7 @@ fn scan_token(c: char, mut line: u32, iter: &mut Peekable<Enumerate<std::str::Ch
         '*' => ("*".to_string(), TokenType::Star),
         '!' => {
             if let Some((_, '=')) = iter.peek() {
+                iter.next();
                 ("!=".to_string(), TokenType::BangEqual)
             } else {
                 ("!".to_string(), TokenType::Bang)
@@ -49,6 +74,7 @@ fn scan_token(c: char, mut line: u32, iter: &mut Peekable<Enumerate<std::str::Ch
         },
         '=' => {
             if let Some((_, '=')) = iter.peek() {
+                iter.next();
                 ("==".to_string(), TokenType::EqualEqual)
             } else {
                 ("=".to_string(), TokenType::Equal)
@@ -56,6 +82,7 @@ fn scan_token(c: char, mut line: u32, iter: &mut Peekable<Enumerate<std::str::Ch
         },
         '<' => {
             if let Some((_, '=')) = iter.peek() {
+                iter.next();
                 ("<=".to_string(), TokenType::LessEqual)
             } else {
                 ("<".to_string(), TokenType::Less)
@@ -63,9 +90,10 @@ fn scan_token(c: char, mut line: u32, iter: &mut Peekable<Enumerate<std::str::Ch
         },
         '>' => {
             if let Some((_, '=')) = iter.peek() {
+                iter.next();
                 (">=".to_string(), TokenType::GreaterEqual)
             } else {
-                ("<".to_string(), TokenType::Greater)
+                (">".to_string(), TokenType::Greater)
             }
         },
         '/' => {
@@ -91,12 +119,19 @@ fn scan_token(c: char, mut line: u32, iter: &mut Peekable<Enumerate<std::str::Ch
         '"' => {
             (scan_string(iter), TokenType::String)
         },
-        _ => {
-            return None
+        c => {
+            if c.is_numeric() { 
+                (scan_number(c, iter), TokenType::Number)
+            } else if c.is_alphabetic() {
+                scan_identifier(c, iter)
+            } else { 
+                return None
+            }
         }
     };
     Some(Token::new(token.to_string(), token_type))
 }
+
     
 fn scan_string(iter: &mut Peekable<Enumerate<std::str::Chars>>) -> String {
     let mut string = String::new();
@@ -106,5 +141,36 @@ fn scan_string(iter: &mut Peekable<Enumerate<std::str::Chars>>) -> String {
         }
         string.push(c);
     }
+    println!("{}", string);
     string
+}
+
+fn scan_number(starting_char: char, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> String {
+    let mut string = String::new();
+    string.push(starting_char);
+    while let Some((_, c)) = iter.peek() {
+        if *c != '.' && !c.is_numeric() {
+            break;
+        }
+        let (_, number) = iter.next().unwrap();
+        string.push(number);
+    }
+    string
+}
+
+fn scan_identifier(starting_char: char, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> (String, TokenType) {
+    let mut string = String::new();
+    string.push(starting_char);
+    while let Some((_, c)) = iter.peek() {
+        if !c.is_alphabetic() && !c.is_numeric() {
+            break;
+        }
+        let (_, character) = iter.next().unwrap();
+        string.push(character);
+    }
+
+    match KEYWORDS.get(string.as_str()) {
+        Some(keyword) => (string, *keyword),
+        None =>          (string, TokenType::Identifier)
+    }
 }

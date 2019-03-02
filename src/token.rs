@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
+#[derive(Copy, Clone)]
 pub enum TokenType {                                   
   // Single-character tokens.                      
   LeftParen, RightParen, LeftBrace, RightBrace,
