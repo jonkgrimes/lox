@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::token::Token;
 
 pub trait Expr 
@@ -18,9 +20,9 @@ impl<T> Literal<T> {
     }
 }
 
-impl<T: std::fmt::Display> Expr for Literal<T>  {}
+impl<T: Display> Expr for Literal<T>  {}
 
-impl<T: std::fmt::Display> std::fmt::Display for Literal<T> {
+impl<T: Display> Display for Literal<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.value)
     }
@@ -37,13 +39,9 @@ impl Unary {
     }
 }
 
-impl Expr for Unary {
-    fn print(&self) {
-        println!("{}", self);
-    }
-}
+impl Expr for Unary {}
 
-impl std::fmt::Display for Unary {
+impl Display for Unary {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "({} {})", self.operator, self.right)
     }
@@ -61,13 +59,9 @@ impl Binary {
     }
 }
 
-impl Expr for Binary {
-    fn print(&self) {
-        println!("{}", self);
-    }
-}
+impl Expr for Binary {}
 
-impl std::fmt::Display for Binary {
+impl Display for Binary {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "({} {} {})", self.operator, self.left, self.right)
     }
@@ -83,13 +77,9 @@ impl Grouping {
     }
 }
 
-impl Expr for Grouping {
-    fn print(&self) {
-        println!("{}", self);
-    }
-}
+impl Expr for Grouping {}
 
-impl std::fmt::Display for Grouping {
+impl Display for Grouping {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "(group {})", self.expression)
     }
