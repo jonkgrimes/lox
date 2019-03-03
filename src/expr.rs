@@ -3,26 +3,24 @@ use crate::token::Token;
 pub trait Expr 
 where Self: std::fmt::Display
 {
-    fn print(&self);
+    fn print(&self) {
+        println!("{}", self);
+    }
 }
 
 pub struct Literal<T> {
     value: T
 }
 
-impl Literal<f32> {
-    pub fn new(value: f32) -> Literal<f32> {
+impl<T> Literal<T> {
+    pub fn new(value: T) -> Literal<T> {
         Literal { value: value }
     }
 }
 
-impl Expr for Literal<f32>  {
-    fn print(&self) {
-        println!("{}", self);
-    }
-}
+impl<T: std::fmt::Display> Expr for Literal<T>  {}
 
-impl std::fmt::Display for Literal<f32> {
+impl<T: std::fmt::Display> std::fmt::Display for Literal<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.value)
     }
@@ -31,6 +29,24 @@ impl std::fmt::Display for Literal<f32> {
 pub struct Unary { 
     operator: Token,
     right: Box<dyn Expr>
+}
+
+impl Unary {
+    pub fn new(operator: Token, right: Box<dyn Expr>) -> Unary {
+        Unary { operator, right }
+    }
+}
+
+impl Expr for Unary {
+    fn print(&self) {
+        println!("{}", self);
+    }
+}
+
+impl std::fmt::Display for Unary {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "({} {})", self.operator, self.right)
+    }
 }
 
 pub struct Binary {
@@ -58,5 +74,23 @@ impl std::fmt::Display for Binary {
 }
 
 pub struct Grouping {
-    expression: Expr,
+    expression: Box<dyn Expr>
+}
+
+impl Grouping {
+    pub fn new(expression: Box<dyn Expr>) -> Grouping {
+        Grouping { expression }
+    }
+}
+
+impl Expr for Grouping {
+    fn print(&self) {
+        println!("{}", self);
+    }
+}
+
+impl std::fmt::Display for Grouping {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "(group {})", self.expression)
+    }
 }

@@ -36,6 +36,10 @@ impl Token {
     pub fn minus() -> Token {
         Token { lexeme: String::from("-"), token_type: TokenType::Minus }
     }
+
+    pub fn star() -> Token {
+        Token { lexeme: String::from("*"), token_type: TokenType::Star }
+    }
 }
 
 impl Display for Token {
