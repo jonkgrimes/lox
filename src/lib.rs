@@ -6,18 +6,17 @@ use std::io::Write;
 
 mod scanner;
 mod token;
+mod expr;
 
 use scanner::{Scanner};
 use token::Token;
+use expr::{Expr, Binary, Literal};
 
 pub fn run_prompt() -> io::Result<()> {
-    loop {
-        let mut input = String::new();
-        print!("> ");
-        io::stdout().flush()?;
-        io::stdin().read_line(&mut input)?;
-        run(&input)
-    }
+    println!("Run prompt");
+    let expr = Binary::new(Box::new(Literal::new(1.1)), Token::minus(), Box::new(Literal::new(2.2)));
+    expr.print();
+    Ok(())
 }
 
 pub fn run_file(path: &String) {

@@ -43,7 +43,7 @@ impl Scanner {
         let mut iter = self.source.chars().enumerate().peekable();
 
         while let Some((_i, c)) = iter.next() {
-            if let Some(token) = scan_token(c, line, &mut iter) {
+            if let Some(token) = scan_token(c, &mut line, &mut iter) {
                 self.tokens.push(token);
             }
         }
@@ -52,7 +52,7 @@ impl Scanner {
     }
 }
 
-fn scan_token(c: char, mut line: u32, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> Option<Token> {
+fn scan_token(c: char, line: &mut u32, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> Option<Token> {
     let (token, token_type) = match c {
         '(' => ("(".to_string(), TokenType::LeftParen),
         ')' => (")".to_string(), TokenType::RightParen),
@@ -113,7 +113,7 @@ fn scan_token(c: char, mut line: u32, iter: &mut Peekable<Enumerate<std::str::Ch
             return None
         },
         '\n' => {
-            line += 1;
+            *line += 1;
             return None
         },
         '"' => {
