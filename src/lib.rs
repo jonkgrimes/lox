@@ -13,14 +13,13 @@ use token::Token;
 use expr::{Expr, Binary, Unary, Literal, Grouping};
 
 pub fn run_prompt() -> io::Result<()> {
-    println!("Run prompt");
-    let expr = Binary::new(
-        Box::new(Unary::new(Token::minus(), Box::new(Literal::new(123)))),
-        Token::star(),
-        Box::new(Grouping::new(Box::new(Literal::new(45.67))))
-    );
-    expr.print();
-    Ok(())
+    loop {
+        let mut input = String::new();
+        print!("> ");
+        io::stdout().flush()?;
+        io::stdin().read_line(&mut input)?;
+        run(&input)
+    }
 }
 
 pub fn run_file(path: &String) {

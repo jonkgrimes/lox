@@ -2,6 +2,7 @@ use std::fmt;
 use std::fmt::Display;
 use std::iter::{Peekable, Enumerate};
 use std::collections::HashMap;
+use std::error::Error;
 
 use crate::token::{Token, TokenType};
 
@@ -52,7 +53,24 @@ impl Scanner {
     }
 }
 
-fn scan_token(c: char, line: &mut u32, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> Option<Token> {
+#[derive(Debug)]
+struct SyntaxError {
+    line: u32
+}
+
+impl Error for SyntaxError {
+    fn description(&self) -> &str {
+        "Encountered an unparseable character"
+    }
+}
+
+impl fmt::Display for SyntaxError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Encountered an unparseable character on line {}", self.line)
+    }
+}
+
+fn scan_token(c: char, line: &mut u32, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> Result<Option<Token>, SyntaxError> {
     let (token, token_type) = match c {
         '(' => ("(".to_string(), TokenType::LeftParen),
         ')' => (")".to_string(), TokenType::RightParen),
