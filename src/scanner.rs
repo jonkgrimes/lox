@@ -39,23 +39,35 @@ impl Scanner {
         Scanner { source: source, tokens: Vec::new() }
     }
 
-    pub fn scan(&mut self) {
+    pub fn scan(&mut self) -> Result<&Vec<Token>, SyntaxError> {
         let mut line = 0;
         let mut iter = self.source.chars().enumerate().peekable();
 
         while let Some((_i, c)) = iter.next() {
-            if let Some(token) = scan_token(c, &mut line, &mut iter) {
+            let scanned_token = scan_token(c, &mut line, &mut iter)?;
+            if let Some(token) = scanned_token {
                 self.tokens.push(token);
             }
         }
-
-        self.tokens.push(Token::new("".to_string(), TokenType::Eof))
+        self.tokens.push(Token::new("".to_string(), TokenType::Eof));
+        Ok(&self.tokens)
     }
 }
 
 #[derive(Debug)]
-struct SyntaxError {
-    line: u32
+pub struct SyntaxError {
+    line: u32,
+    character: char
+}
+
+impl SyntaxError {
+    fn new(line: u32, character: char) -> SyntaxError {
+        SyntaxError { line, character }
+    }
+
+    pub fn line(&self) -> u32 {
+        self.line
+    }
 }
 
 impl Error for SyntaxError {
@@ -64,13 +76,15 @@ impl Error for SyntaxError {
     }
 }
 
-impl fmt::Display for SyntaxError {
+impl Display for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Encountered an unparseable character on line {}", self.line)
     }
 }
 
-fn scan_token(c: char, line: &mut u32, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> Result<Option<Token>, SyntaxError> {
+type ScannerIterator<'a> = Peekable<Enumerate<std::str::Chars<'a>>>;
+
+fn scan_token(c: char, line: &mut u32, iter: &mut ScannerIterator) -> Result<Option<Token>, SyntaxError> {
     let (token, token_type) = match c {
         '(' => ("(".to_string(), TokenType::LeftParen),
         ')' => (")".to_string(), TokenType::RightParen),
@@ -122,17 +136,17 @@ fn scan_token(c: char, line: &mut u32, iter: &mut Peekable<Enumerate<std::str::C
                         break;
                     }
                 }
-                return None
+                return Ok(None)
             } else {
                 ("/".to_string(), TokenType::Slash)
             }
         },
         ' ' | '\t' | '\r'  => {
-            return None
+            return Ok(None)
         },
         '\n' => {
             *line += 1;
-            return None
+            return Ok(None)
         },
         '"' => {
             (scan_string(iter), TokenType::String)
@@ -143,15 +157,15 @@ fn scan_token(c: char, line: &mut u32, iter: &mut Peekable<Enumerate<std::str::C
             } else if c.is_alphabetic() {
                 scan_identifier(c, iter)
             } else { 
-                return None
+                return Err(SyntaxError::new(line.clone(), c))
             }
         }
     };
-    Some(Token::new(token.to_string(), token_type))
+    Ok(Some(Token::new(token.to_string(), token_type)))
 }
 
     
-fn scan_string(iter: &mut Peekable<Enumerate<std::str::Chars>>) -> String {
+fn scan_string(iter: &mut ScannerIterator) -> String {
     let mut string = String::new();
     while let Some((_, c)) = iter.next() {
         if c == '"' {
@@ -163,7 +177,7 @@ fn scan_string(iter: &mut Peekable<Enumerate<std::str::Chars>>) -> String {
     string
 }
 
-fn scan_number(starting_char: char, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> String {
+fn scan_number(starting_char: char, iter: &mut ScannerIterator) -> String {
     let mut string = String::new();
     string.push(starting_char);
     while let Some((_, c)) = iter.peek() {
@@ -176,7 +190,7 @@ fn scan_number(starting_char: char, iter: &mut Peekable<Enumerate<std::str::Char
     string
 }
 
-fn scan_identifier(starting_char: char, iter: &mut Peekable<Enumerate<std::str::Chars>>) -> (String, TokenType) {
+fn scan_identifier(starting_char: char, iter: &mut ScannerIterator) -> (String, TokenType) {
     let mut string = String::new();
     string.push(starting_char);
     while let Some((_, c)) = iter.peek() {

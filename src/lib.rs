@@ -3,14 +3,16 @@ extern crate lazy_static;
 
 use std::io;
 use std::io::Write;
+use std::io::BufReader;
+use std::io::prelude::*;
+use std::fs::File;
+use std::error::Error;
 
 mod scanner;
 mod token;
 mod expr;
 
 use scanner::{Scanner};
-use token::Token;
-use expr::{Expr, Binary, Unary, Literal, Grouping};
 
 pub fn run_prompt() -> io::Result<()> {
     loop {
@@ -18,22 +20,29 @@ pub fn run_prompt() -> io::Result<()> {
         print!("> ");
         io::stdout().flush()?;
         io::stdin().read_line(&mut input)?;
-        run(&input)
+        run(&input)?
     }
 }
 
-pub fn run_file(path: &String) {
-    println!("{}", path);
+pub fn run_file(path: &String) -> io::Result<()> {
+    let mut file = File::open(path)?;
+    let mut buf_reader = BufReader::new(file);
+    let mut contents = String::new();
+    buf_reader.read_to_string(&mut contents)?;
+    run(&contents)
 }
 
-fn run(source: &String) {
+fn run(source: &String) -> io::Result<()> {
     let mut scanner: Scanner = Scanner::new(source.clone());
-    scanner.scan();
-    let tokens: Vec<Token> = scanner.tokens;
-
-    for token in tokens {
-        println!("=> {}", token);
+    match scanner.scan() {
+        Ok(tokens) => {
+            for token in tokens {
+                println!("=> {}", token);
+            }
+        },
+        Err(e) => error(e.line(), e.description())
     }
+    Ok(())
 }
 
 fn error(line: u32, message: &str) {
