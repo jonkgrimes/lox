@@ -15,8 +15,8 @@ pub struct Literal<T> {
 }
 
 impl<T> Literal<T> {
-    pub fn new(value: T) -> Literal<T> {
-        Literal { value: value }
+    pub fn new(value: T) -> Box<Literal<T>> {
+        Box::new(Literal { value: value })
     }
 }
 
@@ -34,8 +34,8 @@ pub struct Unary {
 }
 
 impl Unary {
-    pub fn new(operator: Token, right: Box<dyn Expr>) -> Unary {
-        Unary { operator, right }
+    pub fn new(operator: Token, right: Box<dyn Expr>) -> Box<Unary> {
+        Box::new(Unary { operator, right })
     }
 }
 
@@ -54,8 +54,8 @@ pub struct Binary {
 }
 
 impl Binary {
-    pub fn new(left: Box<dyn Expr>, operator: Token, right: Box<dyn Expr>) -> Binary {
-        Binary { left, operator, right }
+    pub fn new(left: Box<dyn Expr>, operator: Token, right: Box<dyn Expr>) -> Box<Binary> {
+        Box::new(Binary { left, operator, right })
     }
 }
 

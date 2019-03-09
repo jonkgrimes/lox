@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum TokenType {                                   
   // Single-character tokens.                      
   LeftParen, RightParen, LeftBrace, RightBrace,
@@ -39,6 +39,10 @@ impl Token {
 
     pub fn star() -> Token {
         Token { lexeme: String::from("*"), token_type: TokenType::Star }
+    }
+
+    pub fn token_type(&self) -> TokenType {
+        self.token_type
     }
 }
 

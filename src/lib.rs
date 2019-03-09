@@ -11,6 +11,7 @@ use std::error::Error;
 mod scanner;
 mod token;
 mod expr;
+mod parser;
 
 use scanner::{Scanner};
 
@@ -25,7 +26,7 @@ pub fn run_prompt() -> io::Result<()> {
 }
 
 pub fn run_file(path: &String) -> io::Result<()> {
-    let mut file = File::open(path)?;
+    let file = File::open(path)?;
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
