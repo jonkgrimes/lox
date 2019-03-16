@@ -45,6 +45,10 @@ impl Token {
     pub fn token_type(&self) -> TokenType {
         self.token_type
     }
+
+    pub fn lexeme(&self) -> String {
+        self.lexeme.clone()
+    }
 }
 
 impl Display for Token {
