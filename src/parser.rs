@@ -2,146 +2,73 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 use crate::token::{Token, TokenType};
-use crate::expr::{Expr, Unary, Binary, Literal, Grouping};
+use crate::expr::{Expr, BoxedExpr, Unary, Binary, Literal, Grouping};
 
 pub struct Parser {
   tokens: Vec<Token>,
-}
-
-struct Cursor<'a> {
-  previous: Option<Token>,
-  iterator: Peekable<Iter<'a, Token>>
+  index: usize
 }
 
 impl Parser {
-  fn new(tokens: Vec<Token>) -> Parser {
-    Parser { tokens: tokens }
+  pub fn new(tokens: Vec<Token>) -> Parser {
+    Parser { tokens: tokens, index: 0 }
   }
 
-  fn parse(&self) -> Box<dyn Expr> {
-    let mut cursor = Cursor {
-      previous: None,
-      iterator: self.tokens.iter().peekable()
-    };
-    expression(&mut cursor)
+  pub fn parse(&mut self) -> BoxedExpr {
+    self.expression()
   }
-}
-
-fn expression(cursor: &mut Cursor) -> Box<dyn Expr> {
-  equality(cursor) 
-}
-
-fn equality(cursor: &mut Cursor) -> Box<dyn Expr> {
-  let mut expr = equality(cursor);
-
-  while token_match(cursor, &[TokenType::BangEqual, TokenType::EqualEqual]) {
-    let operator = cursor.previous.unwrap();
-    let right = equality(cursor);
-    expr = Binary::new(expr, operator, right);
+  
+  fn previous(&mut self) -> Option<Token> {
+    Some(self.tokens.get(self.index - 1).unwrap().clone())
   }
 
-  expr
-}
+  fn expression(&mut self) -> BoxedExpr {
+    self.equality() 
+  }
 
-fn token_match(cursor: &mut Cursor, tokens: &[TokenType]) -> bool {
-  for token_type in tokens {
-    if check(cursor, *token_type) {
-      advance(cursor);
-      return true;
+  fn equality(&mut self) -> BoxedExpr {
+    let mut expr = self.comparison();
+
+    while self.matches(&[TokenType::BangEqual, TokenType::EqualEqual]) {
+      let operator = self.previous().unwrap();
+      let right = self.comparison();
+      expr = Binary::new(expr, operator, right);
     }
+    expr
   }
-  false
-}
 
-fn check(cursor: &mut Cursor, token_type: TokenType) -> bool {
-  if at_end(cursor) { return false; }
-  match cursor.iterator.peek() {
-    Some(token) => token.token_type() == token_type,
-    None => false
+  fn comparison(&mut self) -> BoxedExpr {
+    Literal::new(1)
   }
-}
 
-fn advance(cursor: &mut Cursor) -> Option<Token> {
-  cursor.previous = match cursor.iterator.next() {
-    Some(token) => Some(*token),
-    None => None
-  };
-  cursor.previous
-}
-
-fn at_end(cursor: &mut Cursor) -> bool {
-  if let Some(token) = cursor.iterator.peek() {
-    token.token_type() == TokenType::Eof
-  } else { 
+  fn matches(&mut self, tokens: &[TokenType]) -> bool {
+    for token_type in tokens {
+      if self.check(*token_type) {
+        self.next();
+        return true
+      }
+    }
     false
   }
-}
-/*
-fn comparison(&self) -> Box<dyn Expr> {
-  let mut expr = self.addition();
 
-  while self.token_match(&[TokenType::Greater, TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
-    let operator = self.previous().unwrap();
-    let right = self.addition();
-    expr = Binary::new(expr, operator, right);
+  fn check(&mut self, token_type: TokenType) -> bool {
+    self.peek().token_type() == TokenType::Eof
   }
 
-  expr
-}
-
-fn addition(&self) -> Box<dyn Expr> {
-  let mut expr = self.multiplication();
-
-  while self.token_match(&[TokenType::Minus, TokenType::Plus]) {
-    let operator = self.previous().unwrap();
-    let right = self.multiplication();
-    expr = Binary::new(expr, operator, right);
+  fn peek(&mut self) -> Token {
+    self.tokens.get(self.index).unwrap().clone()
   }
-
-  expr
 }
 
-fn multiplication(&self) -> Box<dyn Expr> {
-  let mut expr = self.unary();
+impl Iterator for Parser {
+  type Item = Token;
 
-  while self.token_match(&[TokenType::Slash, TokenType::Star])  {
-    let operator = self.previous().unwrap();
-    let right = self.unary();
-    expr = Binary::new(expr, operator, right);
-  }
-
-  expr
-}
-
-fn unary(&self) -> Box<dyn Expr> {
-  if self.token_match(&[TokenType::Bang, TokenType::Minus]) {
-    let operator = self.previous().unwrap();
-    let right = self.unary();
-    return Unary::new(operator, right)
-  }
-  self.primary()
-}
-
-fn primary(&self) -> Box<dyn Expr> {
-  if self.token_match(&[TokenType::False]) {
-    return Literal::new(false)
-  }
-  Literal::new(true)
-}
-
-// associated helper functions
-fn token_match(&self, tokens: &[TokenType]) -> bool {
-  for token_type in tokens {
-    if self.check(*token_type) {
-      self.cursor.next();
-      return true;
+  fn next(&mut self) -> Option<Token> {
+    self.index += 1;
+    if self.index < self.tokens.len() {
+      Some(self.tokens.get(self.index).unwrap().clone())
+    } else {
+      None
     }
   }
-  false
 }
-
-fn previous(&self) -> Option<Token> {
-  self.previous
-}
-
-*/

@@ -23,6 +23,7 @@ pub enum TokenType {
   Eof                                              
 } 
 
+#[derive(Clone)]
 pub struct Token {
     lexeme: String,
     token_type: TokenType,

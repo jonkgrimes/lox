@@ -14,6 +14,7 @@ mod expr;
 mod parser;
 
 use scanner::{Scanner};
+use parser::{Parser};
 
 pub fn run_prompt() -> io::Result<()> {
     loop {
@@ -37,9 +38,9 @@ fn run(source: &String) -> io::Result<()> {
     let mut scanner: Scanner = Scanner::new(source.clone());
     match scanner.scan() {
         Ok(tokens) => {
-            for token in tokens {
-                println!("=> {}", token);
-            }
+            let mut parser = Parser::new(tokens.to_vec());
+            let expr = parser.parse();
+            println!("{}", expr);
         },
         Err(e) => error(e.line(), e.description())
     }

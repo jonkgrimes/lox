@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use crate::token::Token;
 
+pub type BoxedExpr = Box<dyn Expr>;
+
 pub trait Expr 
 where Self: std::fmt::Display
 {
