@@ -39,7 +39,7 @@ impl Scanner {
         Scanner { source: source, tokens: Vec::new() }
     }
 
-    pub fn scan(&mut self) -> Result<&Vec<Token>, SyntaxError> {
+    pub fn scan(&mut self) -> Result<&Vec<Token>, ParserError> {
         let mut line = 0;
         let mut iter = self.source.chars().enumerate().peekable();
 
@@ -55,14 +55,14 @@ impl Scanner {
 }
 
 #[derive(Debug)]
-pub struct SyntaxError {
+pub struct ParserError {
     line: u32,
     character: char
 }
 
-impl SyntaxError {
-    fn new(line: u32, character: char) -> SyntaxError {
-        SyntaxError { line, character }
+impl ParserError {
+    fn new(line: u32, character: char) -> ParserError {
+        ParserError { line, character }
     }
 
     pub fn line(&self) -> u32 {
@@ -70,13 +70,13 @@ impl SyntaxError {
     }
 }
 
-impl Error for SyntaxError {
+impl Error for ParserError {
     fn description(&self) -> &str {
         "Encountered an unparseable character"
     }
 }
 
-impl Display for SyntaxError {
+impl Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Encountered an unparseable character on line {}", self.line)
     }
@@ -84,7 +84,7 @@ impl Display for SyntaxError {
 
 type ScannerIterator<'a> = Peekable<Enumerate<std::str::Chars<'a>>>;
 
-fn scan_token(c: char, line: &mut u32, iter: &mut ScannerIterator) -> Result<Option<Token>, SyntaxError> {
+fn scan_token(c: char, line: &mut u32, iter: &mut ScannerIterator) -> Result<Option<Token>, ParserError> {
     let (token, token_type) = match c {
         '(' => ("(".to_string(), TokenType::LeftParen),
         ')' => (")".to_string(), TokenType::RightParen),
@@ -157,7 +157,7 @@ fn scan_token(c: char, line: &mut u32, iter: &mut ScannerIterator) -> Result<Opt
             } else if c.is_alphabetic() {
                 scan_identifier(c, iter)
             } else { 
-                return Err(SyntaxError::new(line.clone(), c))
+                return Err(ParserError::new(line.clone(), c))
             }
         }
     };

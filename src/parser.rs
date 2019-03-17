@@ -1,9 +1,10 @@
-use std::iter::Peekable;
-use std::slice::Iter;
 use std::str::FromStr;
+use std::error::Error;
+use std::fmt;
+use std::fmt::Display;
 
 use crate::token::{Token, TokenType};
-use crate::expr::{Expr, BoxedExpr, Unary, Binary, Literal, Grouping};
+use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping};
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -91,14 +92,31 @@ impl Parser {
     }
 
     if self.matches(&[TokenType::Number]) {
-
       return Literal::new(f32::from_str(&self.previous().lexeme()).unwrap())
+    }
+
+    if self.matches(&[TokenType::String]) {
+      return Literal::new(self.previous().lexeme())
+    }
+
+    if self.matches(&[TokenType::LeftParen]) {
+      let expr = self.expression();
+      self.consume(TokenType::RightParen, "Expect ')' after expression").ok();
+      return Grouping::new(expr);
     }
 
     Literal::new(0)
   }
 
   // helper methods not part of the parsing grammar
+  fn consume(&mut self, token_type: TokenType, error: &str) -> Result<Token, SyntaxError> {
+    if self.check(token_type) {
+      Ok(self.next().unwrap())
+    } else {
+      Err(SyntaxError::new(error.to_string()))
+    }
+  }
+
   fn matches(&mut self, tokens: &[TokenType]) -> bool {
     for token_type in tokens {
       if self.check(*token_type) {
@@ -130,3 +148,22 @@ impl Iterator for Parser {
     }
   }
 }
+
+#[derive(Debug)]
+struct SyntaxError {
+  description: String
+}
+
+impl SyntaxError {
+  fn new(description: String) -> SyntaxError {
+      SyntaxError { description }
+  }
+}
+
+impl Display for SyntaxError {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{}", self.description)
+  }
+}
+
+impl Error for SyntaxError {}

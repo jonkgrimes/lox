@@ -74,8 +74,8 @@ pub struct Grouping {
 }
 
 impl Grouping {
-    pub fn new(expression: Box<dyn Expr>) -> Grouping {
-        Grouping { expression }
+    pub fn new(expression: Box<dyn Expr>) -> Box<Grouping> {
+        Box::new(Grouping { expression })
     }
 }
 
