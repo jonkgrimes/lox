@@ -6,11 +6,11 @@ I'll be going in order and marking the chapters off as I make my way through the
 
 ### Current Chapter
 
-- [ ] Chapter 5 - Representing Code
-    - [ ] Context Free Grammars
-    - [ ] Implementing Syntax Trees
-    - [ ] Working with Trees
-    - [ ] A (Not Very) Pretty Printer
+- [ ] Chapter 7 - Evaluating Expressions
+  - [ ] Representing Values
+  - [ ] Evaluating Expressions
+  - [ ] Runtime Errors
+  - [ ] Hooking up the interpreter
 
 ### Previous Chapters
 
@@ -18,3 +18,5 @@ I'll be going in order and marking the chapters off as I make my way through the
 - [x] Chapter 2 - A Map of the Territory
 - [x] Chapter 3 - The Lox Language
 - [x] Chapter 4 - Scanning 
+- [x] Chapter 5 - Representing Code
+- [x] Chapter 6 - Parsing Expressions
