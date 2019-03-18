@@ -12,6 +12,7 @@ mod scanner;
 mod token;
 mod expr;
 mod parser;
+mod interpreter;
 
 use scanner::{Scanner};
 use parser::{Parser};

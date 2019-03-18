@@ -20,6 +20,10 @@ impl<T> Literal<T> {
     pub fn new(value: T) -> Box<Literal<T>> {
         Box::new(Literal { value: value })
     }
+
+    pub fn value(self) -> T {
+        self.value
+    }
 }
 
 impl<T: Display> Expr for Literal<T>  {}
@@ -76,6 +80,10 @@ pub struct Grouping {
 impl Grouping {
     pub fn new(expression: Box<dyn Expr>) -> Box<Grouping> {
         Box::new(Grouping { expression })
+    }
+
+    pub fn expression(self) -> BoxedExpr {
+        self.expression
     }
 }
 
