@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::convert::From;
 
 use crate::token::Token;
 
@@ -7,9 +8,19 @@ pub type BoxedExpr = Box<dyn Expr>;
 pub trait Expr 
 where Self: std::fmt::Display
 {
+    fn accept<V: Visitor>(self, visitor: &mut V) -> V::Value;
     fn print(&self) {
         println!("{}", self);
     }
+}
+
+pub trait Visitor {
+    type Value;
+
+    fn visitLiteral(self, expr: Literal<f32>) -> Self::Value;
+    fn visitUnary(self, expr: Unary) -> Self::Value;
+    // fn visitBinary(self, expr: Binary) -> Self::Value;
+    // fn visitGrouping(self, expr: Grouping) -> Self::Value;
 }
 
 pub struct Literal<T> {
@@ -26,7 +37,17 @@ impl<T> Literal<T> {
     }
 }
 
-impl<T: Display> Expr for Literal<T>  {}
+impl From<f32> for Literal<f32> {
+    fn from(item: f32) -> Literal<f32> {
+        Literal { value: item }
+    }
+}
+
+impl<T: Display> Expr for Literal<T>  {
+    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) -> f32 {
+        visitor.visitLiteral(self);
+    }
+}
 
 impl<T: Display> Display for Literal<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -43,9 +64,21 @@ impl Unary {
     pub fn new(operator: Token, right: Box<dyn Expr>) -> Box<Unary> {
         Box::new(Unary { operator, right })
     }
+
+    pub fn operator(self) -> Token {
+        self.operator
+    }
+
+    pub fn right(self) -> BoxedExpr {
+        self.right
+    }
 }
 
-impl Expr for Unary {}
+impl Expr for Unary {
+    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) {
+        ()
+    }
+}
 
 impl Display for Unary {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -65,7 +98,11 @@ impl Binary {
     }
 }
 
-impl Expr for Binary {}
+impl Expr for Binary {
+    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) {
+        ()
+    }
+}
 
 impl Display for Binary {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -87,7 +124,11 @@ impl Grouping {
     }
 }
 
-impl Expr for Grouping {}
+impl Expr for Grouping {
+    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) {
+        ()
+    }
+}
 
 impl Display for Grouping {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

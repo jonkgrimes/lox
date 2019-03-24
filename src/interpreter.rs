@@ -1,28 +1,49 @@
-use crate::expr::{BoxedExpr, Literal, Grouping};
+use crate::token::{Token, TokenType};
+use crate::expr::{Visitor, BoxedExpr, Literal, Grouping, Unary};
 
-fn interpret(expr: BoxedExpr) {
+struct Interpreter;
+
+struct InterpretedValue(f32);
+
+impl Interpreter {
+  fn evaluate(self, expr: BoxedExpr) -> InterpretedValue {
+    expr.accept(Box::new(self))
+  }
 }
 
-fn evaluate(expr: BoxedExpr) {
+impl Visitor for Interpreter {
+  type Value = f32;
 
-}
+  fn visitLiteral(self, expr: Literal<f32>) -> Self::Value {
+      expr.value()
+  }
 
-fn evaluateLiteral<T>(expr: Box<Literal<T>>) -> T {
-  expr.value()
-}
+  fn visitUnary(self, expr: Unary) -> f32 {
+    let right = self.evaluate(expr.right());
 
-fn evaluateGrouping(expr: Box<Grouping>) {
-  evaluate(expr.expression())
+    match expr.operator().token_type() {
+      TokenType::Minus => {
+        return -1.0;
+      }
+      _ => {
+        return 0.0;
+      }
+    }
+
+    panic!("Encountered an unrecoverable error while evaluating unary.");
+  }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::expr::{BoxedExpr, Literal};
+  use crate::expr::{Expr, BoxedExpr, Literal};
+
   #[test]
   fn it_evaluates_numeric_literals() {
     let expr = Literal::new(5.0);
-    assert_eq!(evaluateLiteral(expr), 5.0);
+    let interpreter = Box::new(Interpreter {});
+    assert_eq!(expr.accept(interpreter) as f32, 5.0);
   } 
 
   #[test]
