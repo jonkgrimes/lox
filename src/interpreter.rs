@@ -14,11 +14,11 @@ impl Interpreter {
 impl Visitor for Interpreter {
   type Value = f32;
 
-  fn visitLiteral(self, expr: Literal<f32>) -> Self::Value {
+  fn visit_literal<T>(self, expr: Literal<T>) -> Self::Value {
       expr.value()
   }
 
-  fn visitUnary(self, expr: Unary) -> f32 {
+  fn visit_unary(self, expr: Unary) -> Self::Value {
     let right = self.evaluate(expr.right());
 
     match expr.operator().token_type() {

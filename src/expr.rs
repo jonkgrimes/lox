@@ -6,19 +6,25 @@ use crate::token::Token;
 pub type BoxedExpr = Box<dyn Expr>;
 
 pub trait Expr 
-where Self: std::fmt::Display
+where Self: std::fmt::Display,
+      Self: Visitable<T>
 {
-    fn accept<V: Visitor>(self, visitor: &mut V) -> V::Value;
     fn print(&self) {
         println!("{}", self);
     }
 }
 
+pub trait Visitable<T> {
+    type Value;
+
+    fn accept(self, visitor: Box<Visitor<Value=T>>) -> T;
+}
+
 pub trait Visitor {
     type Value;
 
-    fn visitLiteral(self, expr: Literal<f32>) -> Self::Value;
-    fn visitUnary(self, expr: Unary) -> Self::Value;
+    fn visit_number_literal<T>(self, expr: Literal<T>) -> Self::Value;
+    fn visit_unary(self, expr: Unary) -> Self::Value;
     // fn visitBinary(self, expr: Binary) -> Self::Value;
     // fn visitGrouping(self, expr: Grouping) -> Self::Value;
 }
@@ -37,15 +43,17 @@ impl<T> Literal<T> {
     }
 }
 
+impl<T: Display> Expr for Literal<T> {}
+
 impl From<f32> for Literal<f32> {
     fn from(item: f32) -> Literal<f32> {
         Literal { value: item }
     }
 }
 
-impl<T: Display> Expr for Literal<T>  {
-    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) -> f32 {
-        visitor.visitLiteral(self);
+impl<T: Display> Visitable for Literal<T>  {
+    fn accept<V: Visitor>(self, visitor: &mut V) -> V::Value {
+        visitor.visit_literal(self)
     }
 }
 
@@ -75,11 +83,13 @@ impl Unary {
 }
 
 impl Expr for Unary {
-    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) {
-        ()
-    }
 }
 
+impl Visitable for Unary {
+    fn accept<V: Visitor>(self, visitor: &mut V) -> V::Value {
+        visitor.visit_unary(self)
+    }
+}
 impl Display for Unary {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "({} {})", self.operator, self.right)
@@ -99,9 +109,6 @@ impl Binary {
 }
 
 impl Expr for Binary {
-    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) {
-        ()
-    }
 }
 
 impl Display for Binary {
@@ -125,9 +132,6 @@ impl Grouping {
 }
 
 impl Expr for Grouping {
-    fn accept(self, visitor: Box<dyn Visitor<Value=f32>>) {
-        ()
-    }
 }
 
 impl Display for Grouping {
