@@ -105,7 +105,7 @@ impl Parser {
       return Grouping::new(expr);
     }
 
-    Literal::new(0)
+    Literal::new(0.0)
   }
 
   // helper methods not part of the parsing grammar

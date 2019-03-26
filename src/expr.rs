@@ -5,45 +5,56 @@ use crate::token::Token;
 
 pub type BoxedExpr = Box<dyn Expr>;
 
-pub trait Expr 
+pub trait Expr
 where Self: std::fmt::Display,
-      Self: Visitable<T>
+      Self: Visitable
 {
     fn print(&self) {
         println!("{}", self);
     }
 }
 
-pub trait Visitable<T> {
-    type Value;
+#[derive(Debug, PartialEq)]
+pub enum ExprResult {
+    String(String),
+    Number(f32),
+    Boolean(bool)
+}
 
-    fn accept(self, visitor: Box<Visitor<Value=T>>) -> T;
+pub trait Visitable
+{
+    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult;
 }
 
 pub trait Visitor {
     type Value;
 
-    fn visit_number_literal<T>(self, expr: Literal<T>) -> Self::Value;
-    fn visit_unary(self, expr: Unary) -> Self::Value;
-    // fn visitBinary(self, expr: Binary) -> Self::Value;
-    // fn visitGrouping(self, expr: Grouping) -> Self::Value;
+    // fn visit_string_literal(&mut self, expr: &Literal<String>) -> Self::Value;
+    fn visit_number_literal(&mut self, expr: &Literal<f32>) -> Self::Value;
+    fn visit_boolean_literal(&mut self, expr: &Literal<bool>) -> Self::Value;
+    fn visit_unary(&mut self, expr: &Unary) -> Self::Value;
+    fn visit_binary(&mut self, expr: &Binary) -> Self::Value;
+    fn visit_grouping(&mut self, expr: &Grouping) -> Self::Value;
 }
 
 pub struct Literal<T> {
     value: T
 }
 
-impl<T> Literal<T> {
+impl<T: Copy> Literal<T> {
     pub fn new(value: T) -> Box<Literal<T>> {
         Box::new(Literal { value: value })
     }
 
-    pub fn value(self) -> T {
+    pub fn value(&self) -> T {
         self.value
     }
 }
 
-impl<T: Display> Expr for Literal<T> {}
+impl Expr for Literal<f32> {}
+// impl Expr for Literal<String> {}
+impl Expr for Literal<bool> {}
+// impl<T: Display> Expr for Literal<T> {}
 
 impl From<f32> for Literal<f32> {
     fn from(item: f32) -> Literal<f32> {
@@ -51,9 +62,21 @@ impl From<f32> for Literal<f32> {
     }
 }
 
-impl<T: Display> Visitable for Literal<T>  {
-    fn accept<V: Visitor>(self, visitor: &mut V) -> V::Value {
-        visitor.visit_literal(self)
+/* impl Visitable for Literal<String>  {
+    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+        visitor.visit_string_literal(self)
+    }
+} */
+
+impl Visitable for Literal<f32>  {
+    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+        visitor.visit_number_literal(self)
+    }
+}
+
+impl Visitable for Literal<bool>  {
+    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+        visitor.visit_boolean_literal(self)
     }
 }
 
@@ -86,10 +109,11 @@ impl Expr for Unary {
 }
 
 impl Visitable for Unary {
-    fn accept<V: Visitor>(self, visitor: &mut V) -> V::Value {
+    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
         visitor.visit_unary(self)
     }
 }
+
 impl Display for Unary {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "({} {})", self.operator, self.right)
@@ -109,6 +133,12 @@ impl Binary {
 }
 
 impl Expr for Binary {
+}
+
+impl Visitable for Binary {
+    fn accept(&self, visitor: &mut dyn Visitor<Value=ExprResult>) -> ExprResult {
+        visitor.visit_binary(self)
+    }
 }
 
 impl Display for Binary {
@@ -132,6 +162,12 @@ impl Grouping {
 }
 
 impl Expr for Grouping {
+}
+
+impl Visitable for Grouping {
+    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+        visitor.visit_grouping(self)
+    }
 }
 
 impl Display for Grouping {
