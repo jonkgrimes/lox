@@ -5,13 +5,27 @@ use crate::token::Token;
 
 pub type BoxedExpr = Box<dyn Expr>;
 
-pub trait Expr
+pub trait Expr: CloneableExpr
 where Self: std::fmt::Display,
       Self: Visitable
 {
     fn print(&self) {
         println!("{}", self);
     }
+}
+
+pub trait CloneableExpr {
+    fn clone_box(&self) -> BoxedExpr;
+}
+
+impl<T> CloneableExpr for T
+where
+    T: 'static + Expr + Clone,
+{
+    fn clone_box(&self) -> Box<dyn Expr> {
+        Box::new(self.clone())
+    }
+
 }
 
 #[derive(Debug, PartialEq)]
@@ -29,7 +43,7 @@ pub trait Visitable
 pub trait Visitor {
     type Value;
 
-    // fn visit_string_literal(&mut self, expr: &Literal<String>) -> Self::Value;
+    fn visit_string_literal(&mut self, expr: &Literal<String>) -> Self::Value;
     fn visit_number_literal(&mut self, expr: &Literal<f32>) -> Self::Value;
     fn visit_boolean_literal(&mut self, expr: &Literal<bool>) -> Self::Value;
     fn visit_unary(&mut self, expr: &Unary) -> Self::Value;
@@ -37,22 +51,23 @@ pub trait Visitor {
     fn visit_grouping(&mut self, expr: &Grouping) -> Self::Value;
 }
 
+#[derive(Clone)]
 pub struct Literal<T> {
     value: T
 }
 
-impl<T: Copy> Literal<T> {
+impl<T: Clone> Literal<T> {
     pub fn new(value: T) -> Box<Literal<T>> {
         Box::new(Literal { value: value })
     }
 
     pub fn value(&self) -> T {
-        self.value
+        self.value.clone()
     }
 }
 
 impl Expr for Literal<f32> {}
-// impl Expr for Literal<String> {}
+impl Expr for Literal<String> {}
 impl Expr for Literal<bool> {}
 // impl<T: Display> Expr for Literal<T> {}
 
@@ -62,11 +77,11 @@ impl From<f32> for Literal<f32> {
     }
 }
 
-/* impl Visitable for Literal<String>  {
+impl Visitable for Literal<String>  {
     fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
         visitor.visit_string_literal(self)
     }
-} */
+}
 
 impl Visitable for Literal<f32>  {
     fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
@@ -86,6 +101,7 @@ impl<T: Display> Display for Literal<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct Unary { 
     operator: Token,
     right: Box<dyn Expr>
@@ -100,8 +116,14 @@ impl Unary {
         self.operator
     }
 
-    pub fn right(self) -> BoxedExpr {
+    pub fn right(&self) -> BoxedExpr {
         self.right
+    }
+}
+
+impl Clone for Box<Unary> {
+    fn clone(&self) -> Box<Unary> {
+        self.clone_box()
     }
 }
 

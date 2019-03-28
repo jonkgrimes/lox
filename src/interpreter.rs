@@ -16,9 +16,9 @@ impl Visitor for Interpreter {
       ExprResult::Number(expr.value())
   }
 
-/*   fn visit_string_literal(&mut self, expr: &Literal<String>) -> Self::Value {
+  fn visit_string_literal(&mut self, expr: &Literal<String>) -> Self::Value {
       ExprResult::String(expr.value())
-  } */
+  }
 
   fn visit_boolean_literal(&mut self, expr: &Literal<bool>) -> Self::Value {
       ExprResult::Boolean(expr.value())
@@ -55,9 +55,9 @@ mod tests {
 
   #[test]
   fn it_evaluates_numeric_literals() {
-    let expr = Literal::new(5.0);
+    let expr = Box::new(Literal::new(5.0));
     let mut interpreter = Interpreter {};
-    assert_eq!(expr.accept(&mut interpreter), ExprResult::Number(5.0));
+    assert_eq!(interpreter.evaluate(expr), ExprResult::Number(5.0));
   } 
 
 /*   #[test]
