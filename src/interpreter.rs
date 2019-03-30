@@ -1,10 +1,10 @@
 use crate::token::{Token, TokenType};
-use crate::expr::{Visitor, BoxedExpr, Literal, Grouping, Unary, Binary, ExprResult};
+use crate::expr::{Visitor, CloneableExpr, BoxedExpr, Literal, Grouping, Unary, Binary, ExprResult};
 
-struct Interpreter;
+pub struct Interpreter;
 
 impl Interpreter {
-  fn evaluate(&mut self, expr: BoxedExpr) -> ExprResult {
+  pub fn evaluate(&mut self, expr: BoxedExpr) -> ExprResult {
     expr.accept(self)
   }
 }
@@ -27,9 +27,9 @@ impl Visitor for Interpreter {
   fn visit_unary(&mut self, expr: &Unary) -> Self::Value {
     let right = self.evaluate(expr.right());
 
-    match expr.operator().token_type() {
+    match expr.clone().operator().token_type() {
       TokenType::Minus => {
-        return ExprResult::Number(-1.0);
+        return right;
       }
       _ => {
         return ExprResult::Number(0.0);
@@ -40,22 +40,22 @@ impl Visitor for Interpreter {
   }
 
   fn visit_binary(&mut self, expr: &Binary) -> Self::Value {
-      ExprResult::Number(0.0)
+      ExprResult::Number(0.1)
   }
 
   fn visit_grouping(&mut self, expr: &Grouping) -> Self::Value {
-      ExprResult::Number(0.0)
+    self.evaluate(expr.clone_box())
   }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::expr::{Expr, BoxedExpr, Literal, Visitor, Visitable};
+  use crate::expr::{Literal};
 
   #[test]
   fn it_evaluates_numeric_literals() {
-    let expr = Box::new(Literal::new(5.0));
+    let expr = Box::new(Literal::new(5.0f32));
     let mut interpreter = Interpreter {};
     assert_eq!(interpreter.evaluate(expr), ExprResult::Number(5.0));
   } 

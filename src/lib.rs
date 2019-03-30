@@ -16,6 +16,7 @@ mod interpreter;
 
 use scanner::{Scanner};
 use parser::{Parser};
+use interpreter::{Interpreter};
 
 pub fn run_prompt() -> io::Result<()> {
     loop {
@@ -40,8 +41,9 @@ fn run(source: &String) -> io::Result<()> {
     match scanner.scan() {
         Ok(tokens) => {
             let mut parser = Parser::new(tokens.to_vec());
+            let mut interpreter = Interpreter {};
             let expr = parser.parse();
-            println!("{}", expr);
+            println!("{}", interpreter.evaluate(expr));
         },
         Err(e) => error(e.line(), e.description())
     }

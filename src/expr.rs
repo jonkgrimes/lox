@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::convert::From;
 
 use crate::token::Token;
 
@@ -33,6 +32,16 @@ pub enum ExprResult {
     String(String),
     Number(f32),
     Boolean(bool)
+}
+
+impl Display for ExprResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            ExprResult::Boolean(value) => { write!(f, "{}", value) },
+            ExprResult::Number(value) => { write!(f, "{}", value) },
+            ExprResult::String(value) => { write!(f, "{}", value) }
+        }
+    }
 }
 
 pub trait Visitable
@@ -70,12 +79,6 @@ impl Expr for Literal<f32> {}
 impl Expr for Literal<String> {}
 impl Expr for Literal<bool> {}
 // impl<T: Display> Expr for Literal<T> {}
-
-impl From<f32> for Literal<f32> {
-    fn from(item: f32) -> Literal<f32> {
-        Literal { value: item }
-    }
-}
 
 impl Visitable for Literal<String>  {
     fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
@@ -117,12 +120,12 @@ impl Unary {
     }
 
     pub fn right(&self) -> BoxedExpr {
-        self.right
+        self.right.clone()
     }
 }
 
-impl Clone for Box<Unary> {
-    fn clone(&self) -> Box<Unary> {
+impl Clone for Box<dyn Expr> {
+    fn clone(&self) -> Box<dyn Expr> {
         self.clone_box()
     }
 }
@@ -142,6 +145,7 @@ impl Display for Unary {
     }
 }
 
+#[derive(Clone)]
 pub struct Binary {
     left: Box<dyn Expr>,
     operator: Token,
@@ -169,6 +173,7 @@ impl Display for Binary {
     }
 }
 
+#[derive(Clone)]
 pub struct Grouping {
     expression: Box<dyn Expr>
 }
