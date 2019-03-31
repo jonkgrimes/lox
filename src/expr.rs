@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use crate::token::Token;
+use crate::lox_value::LoxValue;
 
 pub type BoxedExpr = Box<dyn Expr>;
 
@@ -27,26 +28,9 @@ where
 
 }
 
-#[derive(Debug, PartialEq)]
-pub enum ExprResult {
-    String(String),
-    Number(f32),
-    Boolean(bool)
-}
-
-impl Display for ExprResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            ExprResult::Boolean(value) => { write!(f, "{}", value) },
-            ExprResult::Number(value) => { write!(f, "{}", value) },
-            ExprResult::String(value) => { write!(f, "{}", value) }
-        }
-    }
-}
-
 pub trait Visitable
 {
-    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult;
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxValue;
 }
 
 pub trait Visitor {
@@ -81,19 +65,19 @@ impl Expr for Literal<bool> {}
 // impl<T: Display> Expr for Literal<T> {}
 
 impl Visitable for Literal<String>  {
-    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxValue {
         visitor.visit_string_literal(self)
     }
 }
 
 impl Visitable for Literal<f32>  {
-    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxValue {
         visitor.visit_number_literal(self)
     }
 }
 
 impl Visitable for Literal<bool>  {
-    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxValue {
         visitor.visit_boolean_literal(self)
     }
 }
@@ -134,7 +118,7 @@ impl Expr for Unary {
 }
 
 impl Visitable for Unary {
-    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxValue {
         visitor.visit_unary(self)
     }
 }
@@ -156,13 +140,25 @@ impl Binary {
     pub fn new(left: Box<dyn Expr>, operator: Token, right: Box<dyn Expr>) -> Box<Binary> {
         Box::new(Binary { left, operator, right })
     }
+
+    pub fn operator(self) -> Token {
+        self.operator
+    }
+
+    pub fn left(&self) -> BoxedExpr {
+        self.left.clone()
+    }
+
+    pub fn right(&self) -> BoxedExpr {
+        self.right.clone()
+    }
 }
 
 impl Expr for Binary {
 }
 
 impl Visitable for Binary {
-    fn accept(&self, visitor: &mut dyn Visitor<Value=ExprResult>) -> ExprResult {
+    fn accept(&self, visitor: &mut dyn Visitor<Value=LoxValue>) -> LoxValue {
         visitor.visit_binary(self)
     }
 }
@@ -183,8 +179,8 @@ impl Grouping {
         Box::new(Grouping { expression })
     }
 
-    pub fn expression(self) -> BoxedExpr {
-        self.expression
+    pub fn expression(&self) -> BoxedExpr {
+        self.expression.clone()
     }
 }
 
@@ -192,7 +188,7 @@ impl Expr for Grouping {
 }
 
 impl Visitable for Grouping {
-    fn accept(&self, visitor: &mut Visitor<Value=ExprResult>) -> ExprResult {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxValue {
         visitor.visit_grouping(self)
     }
 }

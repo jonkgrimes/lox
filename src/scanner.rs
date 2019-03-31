@@ -173,7 +173,6 @@ fn scan_string(iter: &mut ScannerIterator) -> String {
         }
         string.push(c);
     }
-    println!("{}", string);
     string
 }
 
