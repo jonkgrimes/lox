@@ -2,6 +2,8 @@ use std::fmt::Display;
 use std::ops::{Sub, Add, Not, Div, Mul, Neg};
 use std::cmp::{PartialOrd, Ordering};
 
+use crate::lox_error::LoxError;
+
 #[derive(Debug, PartialEq)]
 pub enum LoxValue {
     Nil,
@@ -22,12 +24,14 @@ impl Display for LoxValue {
 }
 
 impl Neg for LoxValue {
-    type Output = LoxValue;
+    type Output = Result<LoxValue, LoxError>;
 
-    fn neg(self) -> LoxValue {
+    fn neg(self) -> Result<LoxValue, LoxError> {
         match self {
-            LoxValue::Number(value) => LoxValue::Number(-value),
-            _ => panic!("Can't switch the sign of a boolean value")
+            LoxValue::Nil => Ok(LoxValue::Boolean(true)),
+            LoxValue::Number(value) => Ok(LoxValue::Number(-value)),
+            LoxValue::Boolean(_) => Err(LoxError::RuntimeError("Boolean values cannot be negated".to_string())),
+            LoxValue::String(_) => Err(LoxError::RuntimeError("String values cannot be negated".to_string())),
         }
     }
 }

@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Display;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TokenType {                                   
   // Single-character tokens.                      
   LeftParen, RightParen, LeftBrace, RightBrace,
@@ -23,7 +23,7 @@ pub enum TokenType {
   Eof                                              
 } 
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Token {
     lexeme: String,
     token_type: TokenType,
