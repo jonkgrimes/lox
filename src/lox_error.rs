@@ -7,7 +7,8 @@ pub enum LoxError {
 
 impl Display for LoxError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let LoxError::RuntimeError(message) = &self;
-        write!(f, "{}", message)
+      match self {
+        LoxError::RuntimeError(message) => write!(f, "RuntimeError: {}", message)
+      }
     }
 }
