@@ -12,7 +12,7 @@ impl Interpreter {
 
   pub fn interpret(&mut self, expr: BoxedExpr) {
     match self.evaluate(expr) {
-      Ok(value) => println!("{}", value),
+      Ok(value) => println!("=> {}", value),
       Err(error) => eprintln!("{}", error)
     }
   }
