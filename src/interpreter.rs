@@ -25,6 +25,10 @@ impl Interpreter {
 impl Visitor for Interpreter {
   type Value = LoxValue;
 
+  fn visit_nil_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError> {
+      Ok(expr.value())
+  }
+
   fn visit_number_literal(&mut self, expr: &Literal<f32>) -> Result<Self::Value, LoxError> {
       Ok(LoxValue::Number(expr.value()))
   }

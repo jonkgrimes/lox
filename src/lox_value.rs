@@ -4,7 +4,7 @@ use std::cmp::{PartialOrd, Ordering};
 
 use crate::lox_error::LoxError;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum LoxValue {
     Nil,
     String(String),

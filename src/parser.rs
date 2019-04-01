@@ -5,6 +5,7 @@ use std::fmt::Display;
 
 use crate::token::{Token, TokenType};
 use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping};
+use crate::lox_value::LoxValue;
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -91,6 +92,10 @@ impl Parser {
       return Literal::new(true)
     }
 
+    if self.matches(&[TokenType::Nil]) {
+      return Literal::new(LoxValue::Nil)
+    }
+
     if self.matches(&[TokenType::Number]) {
       return Literal::new(f32::from_str(&self.previous().lexeme()).unwrap())
     }
@@ -109,11 +114,11 @@ impl Parser {
   }
 
   // helper methods not part of the parsing grammar
-  fn consume(&mut self, token_type: TokenType, error: &str) -> Result<Token, SyntaxError> {
+  fn consume(&mut self, token_type: TokenType, error: &str) -> Result<Token, ParserError> {
     if self.check(token_type) {
       Ok(self.next().unwrap())
     } else {
-      Err(SyntaxError::new(error.to_string()))
+      Err(ParserError::new(error.to_string()))
     }
   }
 
@@ -150,20 +155,20 @@ impl Iterator for Parser {
 }
 
 #[derive(Debug)]
-struct SyntaxError {
+struct ParserError {
   description: String
 }
 
-impl SyntaxError {
-  fn new(description: String) -> SyntaxError {
-      SyntaxError { description }
+impl ParserError {
+  fn new(description: String) -> ParserError {
+      ParserError { description }
   }
 }
 
-impl Display for SyntaxError {
+impl Display for ParserError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}", self.description)
   }
 }
 
-impl Error for SyntaxError {}
+impl Error for ParserError {}

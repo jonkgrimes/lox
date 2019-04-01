@@ -5,6 +5,7 @@ use crate::lox_value::LoxValue;
 use crate::lox_error::LoxError;
 
 pub type BoxedExpr = Box<dyn Expr>;
+pub type LoxResult = Result<LoxValue, LoxError>;
 
 pub trait Expr: CloneableExpr
 where Self: std::fmt::Display,
@@ -29,14 +30,21 @@ where
 
 }
 
+impl Clone for Box<dyn Expr> {
+    fn clone(&self) -> Box<dyn Expr> {
+        self.clone_box()
+    }
+}
+
 pub trait Visitable
 {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> Result<LoxValue, LoxError>;
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult;
 }
 
 pub trait Visitor {
     type Value;
 
+    fn visit_nil_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError>;
     fn visit_string_literal(&mut self, expr: &Literal<String>) -> Result<Self::Value, LoxError>;
     fn visit_number_literal(&mut self, expr: &Literal<f32>) -> Result<Self::Value, LoxError>;
     fn visit_boolean_literal(&mut self, expr: &Literal<bool>) -> Result<Self::Value, LoxError>;
@@ -63,23 +71,33 @@ impl<T: Clone> Literal<T> {
 impl Expr for Literal<f32> {}
 impl Expr for Literal<String> {}
 impl Expr for Literal<bool> {}
+impl Expr for Literal<LoxValue> {}
 // impl<T: Display> Expr for Literal<T> {}
 
 impl Visitable for Literal<String>  {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> Result<LoxValue, LoxError> {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
         visitor.visit_string_literal(self)
     }
 }
 
 impl Visitable for Literal<f32>  {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> Result<LoxValue, LoxError> {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
         visitor.visit_number_literal(self)
     }
 }
 
 impl Visitable for Literal<bool>  {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> Result<LoxValue, LoxError> {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
         visitor.visit_boolean_literal(self)
+    }
+}
+
+impl Visitable for Literal<LoxValue> {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+        match self.value() {
+            LoxValue::Nil => visitor.visit_nil_literal(self),
+            _ => panic!("Panic!!!")
+        }
     }
 }
 
@@ -109,17 +127,11 @@ impl Unary {
     }
 }
 
-impl Clone for Box<dyn Expr> {
-    fn clone(&self) -> Box<dyn Expr> {
-        self.clone_box()
-    }
-}
-
 impl Expr for Unary {
 }
 
 impl Visitable for Unary {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> Result<LoxValue, LoxError> {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
         visitor.visit_unary(self)
     }
 }
@@ -159,7 +171,7 @@ impl Expr for Binary {
 }
 
 impl Visitable for Binary {
-    fn accept(&self, visitor: &mut dyn Visitor<Value=LoxValue>) -> Result<LoxValue, LoxError> {
+    fn accept(&self, visitor: &mut dyn Visitor<Value=LoxValue>) -> LoxResult {
         visitor.visit_binary(self)
     }
 }
@@ -189,7 +201,7 @@ impl Expr for Grouping {
 }
 
 impl Visitable for Grouping {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> Result<LoxValue, LoxError> {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
         visitor.visit_grouping(self)
     }
 }
