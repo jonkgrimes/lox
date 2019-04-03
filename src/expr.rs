@@ -45,9 +45,9 @@ pub trait Visitor {
     type Value;
 
     fn visit_nil_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError>;
-    fn visit_string_literal(&mut self, expr: &Literal<String>) -> Result<Self::Value, LoxError>;
-    fn visit_number_literal(&mut self, expr: &Literal<f32>) -> Result<Self::Value, LoxError>;
-    fn visit_boolean_literal(&mut self, expr: &Literal<bool>) -> Result<Self::Value, LoxError>;
+    fn visit_string_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError>;
+    fn visit_number_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError>;
+    fn visit_boolean_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError>;
     fn visit_unary(&mut self, expr: &Unary) -> Result<Self::Value, LoxError>;
     fn visit_binary(&mut self, expr: &Binary) -> Result<Self::Value, LoxError>;
     fn visit_grouping(&mut self, expr: &Grouping) -> Result<Self::Value, LoxError>;
@@ -68,35 +68,15 @@ impl<T: Clone> Literal<T> {
     }
 }
 
-impl Expr for Literal<f32> {}
-impl Expr for Literal<String> {}
-impl Expr for Literal<bool> {}
 impl Expr for Literal<LoxValue> {}
-// impl<T: Display> Expr for Literal<T> {}
-
-impl Visitable for Literal<String>  {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
-        visitor.visit_string_literal(self)
-    }
-}
-
-impl Visitable for Literal<f32>  {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
-        visitor.visit_number_literal(self)
-    }
-}
-
-impl Visitable for Literal<bool>  {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
-        visitor.visit_boolean_literal(self)
-    }
-}
 
 impl Visitable for Literal<LoxValue> {
     fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
         match self.value() {
             LoxValue::Nil => visitor.visit_nil_literal(self),
-            _ => panic!("Panic!!!")
+            LoxValue::Number(_number) => visitor.visit_number_literal(self),
+            LoxValue::String(_string) => visitor.visit_string_literal(self),
+            LoxValue::Boolean(_boolean) => visitor.visit_boolean_literal(self)
         }
     }
 }

@@ -81,14 +81,14 @@ impl Sub for LoxValue {
 }
 
 impl Add for LoxValue {
-    type Output = LoxValue;
+    type Output = Result<LoxValue, LoxError>;
 
-    fn add(self, rhs: LoxValue) -> LoxValue {
+    fn add(self, rhs: LoxValue) -> Result<LoxValue, LoxError> {
         match self {
             LoxValue::Number(value) => {
                 match rhs {
-                    LoxValue::Number(rhs_value) => LoxValue::Number(value + rhs_value),
-                    _ => panic!("Can't add these two values")
+                    LoxValue::Number(rhs_value) => Ok(LoxValue::Number(value + rhs_value)),
+                    _ => Err(LoxError::RuntimeError("right hand side must also be a number".to_string()))
                 }
             },
             LoxValue::String(value) => {
@@ -96,7 +96,7 @@ impl Add for LoxValue {
                     LoxValue::String(rhs_value) => {
                         let mut new_str = value.clone();
                         new_str.push_str(&rhs_value);
-                        LoxValue::String(new_str)
+                        Ok(LoxValue::String(new_str))
                     },
                     _ => panic!("Can't add these two values")
                 }

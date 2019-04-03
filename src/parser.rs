@@ -85,11 +85,11 @@ impl Parser {
 
   fn primary(&mut self) -> BoxedExpr {
     if self.matches(&[TokenType::False]) {
-      return Literal::new(false)
+      return Literal::new(LoxValue::Boolean(false))
     }
 
     if self.matches(&[TokenType::True]) {
-      return Literal::new(true)
+      return Literal::new(LoxValue::Boolean(true))
     }
 
     if self.matches(&[TokenType::Nil]) {
@@ -97,11 +97,11 @@ impl Parser {
     }
 
     if self.matches(&[TokenType::Number]) {
-      return Literal::new(f32::from_str(&self.previous().lexeme()).unwrap())
+      return Literal::new(LoxValue::Number(f32::from_str(&self.previous().lexeme()).unwrap()))
     }
 
     if self.matches(&[TokenType::String]) {
-      return Literal::new(self.previous().lexeme())
+      return Literal::new(LoxValue::String(self.previous().lexeme()))
     }
 
     if self.matches(&[TokenType::LeftParen]) {
@@ -110,7 +110,7 @@ impl Parser {
       return Grouping::new(expr);
     }
 
-    Literal::new(0.0)
+    Literal::new(LoxValue::Number(0.0))
   }
 
   // helper methods not part of the parsing grammar
@@ -133,11 +133,42 @@ impl Parser {
   }
 
   fn check(&mut self, token_type: TokenType) -> bool {
-    self.peek().token_type() == token_type
+    if let Some(token) = self.peek() {
+      return token.token_type() == token_type
+    } else {
+      return false
+    }
   }
 
-  fn peek(&mut self) -> Token {
-    self.tokens.get(self.index).unwrap().clone()
+  fn peek(&mut self) -> Option<Token> {
+    match self.tokens.get(self.index) {
+      Some(token) => Some(token.clone()),
+      None => None
+    }
+  }
+
+  fn synchronize(& mut self) {
+    self.next();
+
+    while let Some(token) = self.peek() {
+        if self.previous().token_type() == TokenType::Semicolon {
+          return ()
+        }
+
+        match token.token_type() {
+          TokenType::Class => return,
+          TokenType::Fun   => return,
+          TokenType::For   => return,
+          TokenType::If   => return,
+          TokenType::Var   => return,
+          TokenType::While   => return,
+          TokenType::Print   => return,
+          TokenType::Return   => return,
+          _ => ()
+        }
+
+        self.next();
+    }
   }
 }
 
