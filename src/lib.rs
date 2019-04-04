@@ -14,6 +14,7 @@ use rustyline::Editor;
 mod scanner;
 mod token;
 mod expr;
+mod stmt;
 mod parser;
 mod interpreter;
 mod lox_value;
@@ -62,8 +63,8 @@ fn run(source: &String) -> io::Result<()> {
         Ok(tokens) => {
             let mut parser = Parser::new(tokens.to_vec());
             let mut interpreter = Interpreter::new();
-            let expr = parser.parse();
-            interpreter.interpret(expr)
+            let statements = parser.parse();
+            interpreter.interpret(statements)
         },
         Err(e) => error(e.line(), e.description())
     }

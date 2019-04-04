@@ -6,6 +6,7 @@ use std::fmt::Display;
 use crate::token::{Token, TokenType};
 use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping};
 use crate::lox_value::LoxValue;
+use crate::stmt::{Stmt, Print, Expression};
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -17,8 +18,32 @@ impl Parser {
     Parser { tokens: tokens, index: 0 }
   }
 
-  pub fn parse(&mut self) -> BoxedExpr {
-    self.expression()
+  pub fn parse(&mut self) -> Vec<Box<dyn Stmt>> {
+    let mut statements: Vec<Box<dyn Stmt>> = Vec::new();
+    while !self.is_end() {
+      statements.push(self.statement());
+    }
+    statements
+  }
+
+  fn statement(&mut self) -> Box<dyn Stmt> {
+    if self.matches(&[TokenType::Print]) {
+      return self.print_statment();
+    }
+
+    self.expression_statement()
+  }
+
+  fn print_statment(&mut self) -> Box<dyn Stmt> {
+    let expr = self.expression();
+    self.consume(TokenType::Semicolon, "Expect ';' after value.").ok();
+    Print::new(expr)
+  }
+
+  fn expression_statement(&mut self) -> Box<dyn Stmt> {
+    let expr = self.expression();
+    self.consume(TokenType::Semicolon, "Expect ';' after expression.").ok();
+    Expression::new(expr) 
   }
   
   fn previous(&mut self) -> Token {
@@ -144,6 +169,13 @@ impl Parser {
     match self.tokens.get(self.index) {
       Some(token) => Some(token.clone()),
       None => None
+    }
+  }
+
+  fn is_end(&mut self) -> bool {
+    match self.peek() {
+      Some(token) => token.token_type() == TokenType::Eof,
+      None => true
     }
   }
 

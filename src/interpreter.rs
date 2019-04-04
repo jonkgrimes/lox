@@ -1,7 +1,8 @@
 use crate::token::{TokenType};
 use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
-use crate::expr::{Visitor, BoxedExpr, Literal, Grouping, Unary, Binary};
+use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary};
+use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print};
 
 pub struct Interpreter;
 
@@ -10,11 +11,14 @@ impl Interpreter {
     Interpreter {}
   }
 
-  pub fn interpret(&mut self, expr: BoxedExpr) {
-    match self.evaluate(expr) {
-      Ok(value) => println!("=> {}", value),
-      Err(error) => eprintln!("{}", error)
+  pub fn interpret(&mut self, statements: Vec<Box<dyn Stmt>>) {
+    for statement in statements {
+      self.execute(statement)
     }
+  }
+
+  pub fn execute(&mut self, stmt: Box<dyn Stmt>) {
+    stmt.accept(self)
   }
 
   pub fn evaluate(&mut self, expr: BoxedExpr) -> Result<LoxValue, LoxError> {
@@ -22,7 +26,7 @@ impl Interpreter {
   }
 }
 
-impl Visitor for Interpreter {
+impl ExprVisitor for Interpreter {
   type Value = LoxValue;
 
   fn visit_nil_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError> {
@@ -98,6 +102,19 @@ impl Visitor for Interpreter {
 
   fn visit_grouping(&mut self, expr: &Grouping) -> Result<Self::Value, LoxError> {
       self.evaluate(expr.expression())
+  }
+}
+
+impl StmtVisitor for Interpreter {
+  type Value = ();
+
+  fn visit_expression_statement(&mut self, stmt: &Expression) {
+    self.evaluate(stmt.clone().expr()).ok();
+  }
+
+  fn visit_print_statement(&mut self, stmt: &Print) {
+    let value = self.evaluate(stmt.clone().expr());
+    println!("{}", value.unwrap());
   }
 }
 
