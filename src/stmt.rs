@@ -1,4 +1,5 @@
 use crate::expr::{BoxedExpr};
+use crate::token::Token;
 
 pub trait Stmt: CloneableStmt
 where Self: Visitable {
@@ -74,5 +75,25 @@ impl Print {
 impl Visitable for Print {
   fn accept(&self, visitor: &mut Visitor<Value=()>) {
     visitor.visit_print_statement(self)
+  }
+}
+
+#[derive(Clone)]
+pub struct Var {
+    name: Token,
+    initializer: BoxedExpr
+}
+
+impl Stmt for Var {}
+
+impl Var {
+  pub fn new(name: Token, initializer: BoxedExpr) -> Box<dyn Stmt> {
+    Box::new(Var { name, initializer })
+  }
+}
+
+impl Visitable for Var {
+  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+    ()
   }
 }

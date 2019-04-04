@@ -87,6 +87,12 @@ impl<T: Display> Display for Literal<T> {
     }
 }
 
+impl Literal<LoxValue> {
+    pub fn nil() -> Box<Literal<LoxValue>> {
+        Box::new(Literal { value: LoxValue::Nil })
+    }
+}
+
 #[derive(Clone)]
 pub struct Unary { 
     operator: Token,
@@ -189,5 +195,24 @@ impl Visitable for Grouping {
 impl Display for Grouping {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "(group {})", self.expression)
+    }
+}
+
+#[derive(Clone)]
+pub struct Variable {
+   name: Token
+}
+
+impl Expr for Variable {}
+
+impl Visitable for Variable {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+        visitor.visit_variable(self)
+    }
+}
+
+impl Display for Variable {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "var {}", self.name)
     }
 }

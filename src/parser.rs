@@ -6,7 +6,7 @@ use std::fmt::Display;
 use crate::token::{Token, TokenType};
 use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping};
 use crate::lox_value::LoxValue;
-use crate::stmt::{Stmt, Print, Expression};
+use crate::stmt::{Stmt, Print, Expression, Var};
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -21,9 +21,31 @@ impl Parser {
   pub fn parse(&mut self) -> Vec<Box<dyn Stmt>> {
     let mut statements: Vec<Box<dyn Stmt>> = Vec::new();
     while !self.is_end() {
+      statements.push(self.declaration());
       statements.push(self.statement());
     }
     statements
+  }
+
+  fn declaration(&mut self) -> Box<dyn Stmt> {
+    if self.matches(&[TokenType::Var]) {
+        return self.var_declaration();
+    }
+
+    self.statement()
+  }
+
+  fn var_declaration(&mut self) -> Box<dyn Stmt> {
+    let name = self.consume(TokenType::Identifier, "Expected variable name").unwrap();
+
+    let initializer = if self.matches(&[TokenType::Equal]) {
+      self.expression()
+    } else {
+      Literal::nil()
+    };
+
+    self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.").ok();
+    Var::new(name, initializer)
   }
 
   fn statement(&mut self) -> Box<dyn Stmt> {
@@ -133,6 +155,10 @@ impl Parser {
       let expr = self.expression();
       self.consume(TokenType::RightParen, "Expect ')' after expression").ok();
       return Grouping::new(expr);
+    }
+
+    if self.matches(&[TokenType::Identifier]) {
+      return Variable::new(self.previous())
     }
 
     Literal::new(LoxValue::Number(0.0))
