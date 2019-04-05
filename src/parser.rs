@@ -6,7 +6,7 @@ use std::fmt::Display;
 use crate::token::{Token, TokenType};
 use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping, Variable, Assign};
 use crate::lox_value::LoxValue;
-use crate::stmt::{Stmt, Print, Expression, Var};
+use crate::stmt::{Stmt, Print, Expression, Var, Block};
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -54,6 +54,10 @@ impl Parser {
       return self.print_statment();
     }
 
+    if self.matches(&[TokenType::LeftBrace]) {
+      return Block::new(self.block())
+    }
+
     self.expression_statement()
   }
 
@@ -67,6 +71,17 @@ impl Parser {
     let expr = self.expression();
     self.consume(TokenType::Semicolon, "Expect ';' after expression.").ok();
     Expression::new(expr) 
+  }
+
+  fn block(&mut self) -> Vec<Box<dyn Stmt>> {
+    let mut statements: Vec<Box<dyn Stmt>> = Vec::new();
+
+    while !self.check(TokenType::RightBrace) && !self.is_end() {
+      statements.push(self.declaration());
+    }
+
+    self.consume(TokenType::RightBrace, "Expect '}' after block.").ok();
+    statements
   }
 
   // Expressions
@@ -90,7 +105,7 @@ impl Parser {
   }
   
   fn expression(&mut self) -> BoxedExpr {
-    self.equality() 
+    self.assignment()
   }
 
   fn equality(&mut self) -> BoxedExpr {

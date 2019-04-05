@@ -2,7 +2,7 @@ use crate::token::{TokenType};
 use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
 use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign};
-use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var};
+use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block};
 use crate::environment::Environment;
 
 pub struct Interpreter {
@@ -139,6 +139,10 @@ impl StmtVisitor for Interpreter {
     }
     self.environment.define(stmt.name().lexeme(), value);
   }
+
+  fn visit_block_statement(&mut self, stmt: &Block) {
+    self.execute_block(stmt.statements(), Environment::new());
+  }
 }
 
 impl Interpreter {
@@ -149,6 +153,18 @@ impl Interpreter {
         LoxValue::String(_) => LoxValue::Boolean(true),
         LoxValue::Boolean(value) => LoxValue::Boolean(value),
       }
+  }
+
+  fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Environment) {
+    let previous = self.environment.clone();
+
+    self.environment = environment;
+
+    for statement in statements {
+      self.execute(statement);
+    }
+
+    self.environment = previous;
   }
 }
 
