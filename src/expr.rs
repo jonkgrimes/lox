@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::any::Any;
 
 use crate::token::Token;
 use crate::lox_value::LoxValue;
@@ -11,6 +12,8 @@ pub trait Expr: CloneableExpr
 where Self: std::fmt::Display,
       Self: Visitable
 {
+    fn as_any(&self) -> &dyn Any;
+
     fn print(&self) {
         println!("{}", self);
     }
@@ -51,6 +54,8 @@ pub trait Visitor {
     fn visit_unary(&mut self, expr: &Unary) -> Result<Self::Value, LoxError>;
     fn visit_binary(&mut self, expr: &Binary) -> Result<Self::Value, LoxError>;
     fn visit_grouping(&mut self, expr: &Grouping) -> Result<Self::Value, LoxError>;
+    fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError>;
+    fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError>;
 }
 
 #[derive(Clone)]
@@ -68,7 +73,11 @@ impl<T: Clone> Literal<T> {
     }
 }
 
-impl Expr for Literal<LoxValue> {}
+impl Expr for Literal<LoxValue> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
 
 impl Visitable for Literal<LoxValue> {
     fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
@@ -114,6 +123,9 @@ impl Unary {
 }
 
 impl Expr for Unary {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl Visitable for Unary {
@@ -154,6 +166,9 @@ impl Binary {
 }
 
 impl Expr for Binary {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl Visitable for Binary {
@@ -184,6 +199,9 @@ impl Grouping {
 }
 
 impl Expr for Grouping {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl Visitable for Grouping {
@@ -203,7 +221,21 @@ pub struct Variable {
    name: Token
 }
 
-impl Expr for Variable {}
+impl Expr for Variable {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl Variable {
+    pub fn new(name: Token) -> Box<Variable> {
+        Box::new(Variable { name })
+    }
+
+    pub fn name(&self) -> Token {
+        self.name.clone()
+    }
+}
 
 impl Visitable for Variable {
     fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
@@ -214,5 +246,44 @@ impl Visitable for Variable {
 impl Display for Variable {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "var {}", self.name)
+    }
+}
+
+#[derive(Clone)]
+pub struct Assign {
+    name: Token,
+    value: BoxedExpr
+}
+
+
+impl Expr for Assign {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl Visitable for Assign {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+        visitor.visit_assignment(self)
+    }
+}
+
+impl Display for Assign {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "var {} = {}", self.name, self.value)
+    }
+}
+
+impl Assign {
+    pub fn new(name: Token, value: BoxedExpr) -> Box<Assign> {
+        Box::new(Assign { name, value })
+    }
+
+    pub fn name(&self) -> Token {
+        self.name.clone()
+    }
+
+    pub fn value(&self) -> BoxedExpr {
+        self.value.clone()
     }
 }

@@ -19,6 +19,7 @@ mod parser;
 mod interpreter;
 mod lox_value;
 mod lox_error;
+mod environment;
 
 use scanner::{Scanner};
 use parser::{Parser};

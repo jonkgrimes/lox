@@ -25,6 +25,7 @@ pub trait Visitor {
 
   fn visit_print_statement(&mut self, stmt: &Print) -> Self::Value;
   fn visit_expression_statement(&mut self, stmt: &Expression) -> Self::Value;
+  fn visit_var_statement(&mut self, stmt: &Var) -> Self::Value;
 }
 
 pub trait Visitable
@@ -90,10 +91,18 @@ impl Var {
   pub fn new(name: Token, initializer: BoxedExpr) -> Box<dyn Stmt> {
     Box::new(Var { name, initializer })
   }
+
+  pub fn name(&self) -> Token {
+    self.name.clone()
+  }
+
+  pub fn initializer(&self) -> BoxedExpr {
+    self.initializer.clone()
+  }
 }
 
 impl Visitable for Var {
   fn accept(&self, visitor: &mut Visitor<Value=()>) {
-    ()
+    visitor.visit_var_statement(self)
   }
 }

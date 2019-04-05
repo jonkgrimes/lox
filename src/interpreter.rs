@@ -1,14 +1,19 @@
 use crate::token::{TokenType};
 use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
-use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary};
-use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print};
+use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign};
+use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var};
+use crate::environment::Environment;
 
-pub struct Interpreter;
+pub struct Interpreter {
+  environment: Environment
+}
 
 impl Interpreter {
   pub fn new() -> Interpreter {
-    Interpreter {}
+    Interpreter {
+      environment: Environment::new()
+    }
   }
 
   pub fn interpret(&mut self, statements: Vec<Box<dyn Stmt>>) {
@@ -103,6 +108,16 @@ impl ExprVisitor for Interpreter {
   fn visit_grouping(&mut self, expr: &Grouping) -> Result<Self::Value, LoxError> {
       self.evaluate(expr.expression())
   }
+
+  fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError> {
+      Ok(self.environment.get(expr.name()))
+  }
+
+  fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError> {
+    let value = self.evaluate(expr.value()).unwrap();
+    self.environment.assign(expr.name(), value.clone());
+    Ok(value)
+  }
 }
 
 impl StmtVisitor for Interpreter {
@@ -115,6 +130,14 @@ impl StmtVisitor for Interpreter {
   fn visit_print_statement(&mut self, stmt: &Print) {
     let value = self.evaluate(stmt.clone().expr());
     println!("{}", value.unwrap());
+  }
+
+  fn visit_var_statement(&mut self, stmt: &Var) {
+    let mut value = LoxValue::Nil;
+    if let Ok(initializer) = self.evaluate(stmt.initializer()) {
+      value = initializer;
+    }
+    self.environment.define(stmt.name().lexeme(), value);
   }
 }
 

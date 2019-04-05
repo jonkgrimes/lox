@@ -4,7 +4,7 @@ use std::fmt;
 use std::fmt::Display;
 
 use crate::token::{Token, TokenType};
-use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping};
+use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping, Variable, Assign};
 use crate::lox_value::LoxValue;
 use crate::stmt::{Stmt, Print, Expression, Var};
 
@@ -21,11 +21,12 @@ impl Parser {
   pub fn parse(&mut self) -> Vec<Box<dyn Stmt>> {
     let mut statements: Vec<Box<dyn Stmt>> = Vec::new();
     while !self.is_end() {
-      statements.push(self.declaration());
-      statements.push(self.statement());
+        statements.push(self.declaration());
     }
     statements
   }
+
+  // Statements
 
   fn declaration(&mut self) -> Box<dyn Stmt> {
     if self.matches(&[TokenType::Var]) {
@@ -67,11 +68,27 @@ impl Parser {
     self.consume(TokenType::Semicolon, "Expect ';' after expression.").ok();
     Expression::new(expr) 
   }
-  
-  fn previous(&mut self) -> Token {
-    self.tokens.get(self.index - 1).unwrap().clone()
-  }
 
+  // Expressions
+  fn assignment(&mut self) -> BoxedExpr {
+    let expr = self.equality();
+
+    if self.matches(&[TokenType::Equal]) {
+      let equals = self.previous();
+      let value = self.assignment();
+
+      match expr.as_any().downcast_ref::<Variable>() {
+          Some(variable_expr) => {
+            let name = variable_expr.name();
+            return Assign::new(name, value);
+          },
+          _ => ()
+      }
+    }
+
+    expr
+  }
+  
   fn expression(&mut self) -> BoxedExpr {
     self.equality() 
   }
@@ -165,9 +182,14 @@ impl Parser {
   }
 
   // helper methods not part of the parsing grammar
+  fn previous(&mut self) -> Token {
+    self.tokens.get(self.index - 1).unwrap().clone()
+  }
+
   fn consume(&mut self, token_type: TokenType, error: &str) -> Result<Token, ParserError> {
     if self.check(token_type) {
-      Ok(self.next().unwrap())
+      let token = self.next().unwrap();
+      Ok(token)
     } else {
       Err(ParserError::new(error.to_string()))
     }
@@ -234,9 +256,10 @@ impl Iterator for Parser {
   type Item = Token;
 
   fn next(&mut self) -> Option<Token> {
-    self.index += 1;
     if self.index < self.tokens.len() {
-      Some(self.tokens.get(self.index).unwrap().clone())
+      let token = self.tokens.get(self.index).unwrap();
+      self.index += 1;
+      Some(token.clone())
     } else {
       None
     }
