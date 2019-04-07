@@ -4,9 +4,9 @@ use std::fmt;
 use std::fmt::Display;
 
 use crate::token::{Token, TokenType};
-use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping, Variable, Assign};
+use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping, Variable, Assign, Logical};
 use crate::lox_value::LoxValue;
-use crate::stmt::{Stmt, Print, Expression, Var, Block};
+use crate::stmt::{Stmt, Print, Expression, Var, Block, If, While};
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -15,7 +15,7 @@ pub struct Parser {
 
 impl Parser {
   pub fn new(tokens: Vec<Token>) -> Parser {
-    Parser { tokens: tokens, index: 0 }
+    Parser { tokens, index: 0 }
   }
 
   pub fn parse(&mut self) -> Vec<Box<dyn Stmt>> {
@@ -50,8 +50,16 @@ impl Parser {
   }
 
   fn statement(&mut self) -> Box<dyn Stmt> {
+    if self.matches(&[TokenType::If]) {
+      return self.if_statement();
+    }
+
     if self.matches(&[TokenType::Print]) {
       return self.print_statment();
+    }
+
+    if self.matches(&[TokenType::While]) {
+      return self.while_statement();
     }
 
     if self.matches(&[TokenType::LeftBrace]) {
@@ -61,10 +69,34 @@ impl Parser {
     self.expression_statement()
   }
 
+  fn if_statement(&mut self) -> Box<dyn Stmt> {
+      self.consume(TokenType::LeftParen, "Expect '(' after 'if'.").ok();
+      let condition = self.expression();
+      self.consume(TokenType::RightParen, "Expect ')' after if condition.").ok();
+
+      let then_branch = self.statement();
+      let else_branch = if self.matches(&[TokenType::Else]) {
+          Some(self.statement())
+      } else {
+          None
+      };
+
+      If::new(condition, then_branch, else_branch)
+  }
+
   fn print_statment(&mut self) -> Box<dyn Stmt> {
     let expr = self.expression();
     self.consume(TokenType::Semicolon, "Expect ';' after value.").ok();
     Print::new(expr)
+  }
+
+  fn while_statement(&mut self) -> Box<dyn Stmt> {
+    self.consume(TokenType::LeftParen, "Expect '(' after while.").ok();
+    let condition = self.expression();
+    self.consume(TokenType::RightParen, "Expect ')' after condition.").ok();
+    let body = self.statement();
+
+    While::new(condition, body)
   }
 
   fn expression_statement(&mut self) -> Box<dyn Stmt> {
@@ -86,19 +118,40 @@ impl Parser {
 
   // Expressions
   fn assignment(&mut self) -> BoxedExpr {
-    let expr = self.equality();
+    let expr = self.or();
 
     if self.matches(&[TokenType::Equal]) {
-      let equals = self.previous();
+      let _equals = self.previous();
       let value = self.assignment();
 
-      match expr.as_any().downcast_ref::<Variable>() {
-          Some(variable_expr) => {
-            let name = variable_expr.name();
-            return Assign::new(name, value);
-          },
-          _ => ()
+      if let Some(variable_expr) = expr.as_any().downcast_ref::<Variable>() {
+          let name = variable_expr.name();
+          return Assign::new(name, value);
       }
+    }
+
+    expr
+  }
+
+  fn or(&mut self) -> BoxedExpr {
+    let mut expr = self.and();
+
+    while self.matches(&[TokenType::Or]) {
+      let operator = self.previous();
+      let right = self.and();
+      expr = Logical::new(expr, operator, right);
+    }
+
+    expr
+  } 
+
+  fn and(&mut self) -> BoxedExpr {
+    let mut expr = self.equality();
+
+    while self.matches(&[TokenType::And]) {
+      let operator = self.previous();
+      let right = self.equality();
+      expr = Logical::new(expr, operator, right);
     }
 
     expr
@@ -198,7 +251,7 @@ impl Parser {
 
   // helper methods not part of the parsing grammar
   fn previous(&mut self) -> Token {
-    self.tokens.get(self.index - 1).unwrap().clone()
+    self.tokens[self.index - 1].clone()
   }
 
   fn consume(&mut self, token_type: TokenType, error: &str) -> Result<Token, ParserError> {
@@ -247,7 +300,7 @@ impl Parser {
 
     while let Some(token) = self.peek() {
         if self.previous().token_type() == TokenType::Semicolon {
-          return ()
+          return
         }
 
         match token.token_type() {
@@ -272,9 +325,9 @@ impl Iterator for Parser {
 
   fn next(&mut self) -> Option<Token> {
     if self.index < self.tokens.len() {
-      let token = self.tokens.get(self.index).unwrap();
+      let token = self.tokens[self.index].clone();
       self.index += 1;
-      Some(token.clone())
+      Some(token)
     } else {
       None
     }

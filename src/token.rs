@@ -31,7 +31,7 @@ pub struct Token {
 
 impl Token {
     pub fn new(lexeme: String, token_type: TokenType) -> Token {
-        Token { lexeme: lexeme, token_type: token_type }
+        Token { lexeme, token_type }
     }
 
     pub fn token_type(&self) -> TokenType {

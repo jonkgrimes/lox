@@ -47,10 +47,10 @@ pub fn run_prompt() -> io::Result<()> {
     }
 
     rl.save_history("~/.lox_history").ok();
-    return Ok(())
+    Ok(())
 }
 
-pub fn run_file(path: &String) -> io::Result<()> {
+pub fn run_file(path: &str) -> io::Result<()> {
     let file = File::open(path)?;
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
@@ -58,8 +58,8 @@ pub fn run_file(path: &String) -> io::Result<()> {
     run(&contents)
 }
 
-fn run(source: &String) -> io::Result<()> {
-    let mut scanner: Scanner = Scanner::new(source.clone());
+fn run(source: &str) -> io::Result<()> {
+    let mut scanner: Scanner = Scanner::new(source.to_string());
     match scanner.scan() {
         Ok(tokens) => {
             let mut parser = Parser::new(tokens.to_vec());

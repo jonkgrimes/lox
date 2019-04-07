@@ -36,7 +36,7 @@ pub struct Scanner {
 
 impl Scanner {
     pub fn new(source: String) -> Scanner {
-        Scanner { source: source, tokens: Vec::new() }
+        Scanner { source, tokens: Vec::new() }
     }
 
     pub fn scan(&mut self) -> Result<&Vec<Token>, ParserError> {
@@ -157,7 +157,7 @@ fn scan_token(c: char, line: &mut u32, iter: &mut ScannerIterator) -> Result<Opt
             } else if c.is_alphabetic() {
                 scan_identifier(c, iter)
             } else { 
-                return Err(ParserError::new(line.clone(), c))
+                return Err(ParserError::new(*line, c))
             }
         }
     };

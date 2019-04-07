@@ -98,10 +98,15 @@ impl Add for LoxValue {
                         new_str.push_str(&rhs_value);
                         Ok(LoxValue::String(new_str))
                     },
-                    _ => panic!("Can't add these two values")
+                    _ => panic!("TypeError: Can't add a string to a number.")
                 }
             }
-            _ => panic!("Can't add these two values")
+            LoxValue::Boolean(_value) => {
+                Err(LoxError::RuntimeError("Cannot add value to boolean.".to_string()))
+            },
+            LoxValue::Nil => {
+                Err(LoxError::RuntimeError("Cannot add value to nil.".to_string()))
+            }
         }
     }
 }

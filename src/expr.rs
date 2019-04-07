@@ -56,6 +56,7 @@ pub trait Visitor {
     fn visit_grouping(&mut self, expr: &Grouping) -> Result<Self::Value, LoxError>;
     fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError>;
     fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError>;
+    fn visit_logical(&mut self, expr: &Logical) -> Result<Self::Value, LoxError>;
 }
 
 #[derive(Clone)]
@@ -65,7 +66,7 @@ pub struct Literal<T> {
 
 impl<T: Clone> Literal<T> {
     pub fn new(value: T) -> Box<Literal<T>> {
-        Box::new(Literal { value: value })
+        Box::new(Literal { value })
     }
 
     pub fn value(&self) -> T {
@@ -99,6 +100,49 @@ impl<T: Display> Display for Literal<T> {
 impl Literal<LoxValue> {
     pub fn nil() -> Box<Literal<LoxValue>> {
         Box::new(Literal { value: LoxValue::Nil })
+    }
+}
+
+#[derive(Clone)]
+pub struct Logical {
+    left: BoxedExpr,
+    operator: Token,
+    right: BoxedExpr
+}
+
+impl Expr for Logical {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl Visitable for Logical {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+        visitor.visit_logical(self)
+    }
+}
+
+impl Display for Logical {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "({} {} {})", self.left, self.operator, self.right)
+    }
+}
+
+impl Logical {
+    pub fn new(left: BoxedExpr, operator: Token, right: BoxedExpr) -> Box<Logical> {
+        Box::new(Logical { left, operator, right })
+    }
+
+    pub fn left(&self) -> BoxedExpr {
+        self.left.clone()
+    }
+
+    pub fn operator(&self) -> Token {
+        self.operator.clone()
+    }
+
+    pub fn right(&self) -> BoxedExpr {
+        self.right.clone()
     }
 }
 

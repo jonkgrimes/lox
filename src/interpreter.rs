@@ -1,18 +1,20 @@
+use std::rc::Rc;
+use std::cell::RefCell;
 use crate::token::{TokenType};
 use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
-use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign};
-use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block};
+use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign, Logical};
+use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block, If, While};
 use crate::environment::Environment;
 
 pub struct Interpreter {
-  environment: Environment
+  environment: Rc<RefCell<Environment>>
 }
 
 impl Interpreter {
   pub fn new() -> Interpreter {
     Interpreter {
-      environment: Environment::new()
+      environment: Rc::new(RefCell::new(Environment::new()))
     }
   }
 
@@ -50,18 +52,36 @@ impl ExprVisitor for Interpreter {
       Ok(expr.value())
   }
 
+  fn visit_logical(&mut self, expr: &Logical) -> Result<Self::Value, LoxError> {
+    let left = self.evaluate(expr.left()).unwrap();
+    let is_truthy = self.is_truthy(left.clone());
+    
+    if expr.operator().token_type() == TokenType::Or {
+      match is_truthy {
+        LoxValue::Boolean(true) => return Ok(left),
+        _ =>  self.evaluate(expr.right())
+      }
+    } else { 
+      match is_truthy {
+        LoxValue::Boolean(false) => return Ok(left),
+        _ =>  self.evaluate(expr.right())
+      }
+    }
+
+  }
+
   fn visit_unary(&mut self, expr: &Unary) -> Result<Self::Value, LoxError> {
     let right = self.evaluate(expr.right())?;
 
     match expr.clone().operator().token_type() {
       TokenType::Minus => {
-        return -right
+        -right
       },
       TokenType::Bang => {
-        return Ok(!self.is_truthy(right))
+        Ok(!self.is_truthy(right))
       },
       _ => {
-        return Ok(LoxValue::Number(0.0));
+        Ok(LoxValue::Number(0.0))
       }
     }
   }
@@ -72,36 +92,36 @@ impl ExprVisitor for Interpreter {
 
     match expr.clone().operator().token_type() {
         TokenType::Minus => {
-          return Ok(left - right)
+          Ok(left - right)
         },
         TokenType::Slash => {
-          return Ok(left / right)
+          Ok(left / right)
         },
         TokenType::Star => {
-          return Ok(left * right)
+          Ok(left * right)
         },
         TokenType::Plus => {
-          return left + right
+          left + right
         },
         TokenType::Greater => {
-          return Ok(LoxValue::Boolean(left > right))
+          Ok(LoxValue::Boolean(left > right))
         },
         TokenType::GreaterEqual => {
-          return Ok(LoxValue::Boolean(left >= right))
+          Ok(LoxValue::Boolean(left >= right))
         },
         TokenType::Less => {
-          return Ok(LoxValue::Boolean(left < right))
+          Ok(LoxValue::Boolean(left < right))
         },
         TokenType::LessEqual => {
-          return Ok(LoxValue::Boolean(left <= right))
+          Ok(LoxValue::Boolean(left <= right))
         },
         TokenType::EqualEqual => {
-          return Ok(LoxValue::Boolean(left == right))
+          Ok(LoxValue::Boolean(left == right))
         },
         TokenType::BangEqual => {
-          return Ok(LoxValue::Boolean(left != right))
+          Ok(LoxValue::Boolean(left != right))
         },
-        _ => return Ok(LoxValue::Number(0.0))
+        _ => Ok(LoxValue::Number(0.0))
     }
   }
 
@@ -110,12 +130,14 @@ impl ExprVisitor for Interpreter {
   }
 
   fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError> {
-      Ok(self.environment.get(expr.name()))
+      let mut env_ref = self.environment.borrow_mut();
+      Ok(env_ref.get(expr.name()))
   }
 
   fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError> {
     let value = self.evaluate(expr.value()).unwrap();
-    self.environment.assign(expr.name(), value.clone());
+    let mut env_ref = self.environment.borrow_mut();
+    env_ref.assign(expr.name(), value.clone());
     Ok(value)
   }
 }
@@ -125,6 +147,19 @@ impl StmtVisitor for Interpreter {
 
   fn visit_expression_statement(&mut self, stmt: &Expression) {
     self.evaluate(stmt.clone().expr()).ok();
+  }
+
+  fn visit_if_statement(&mut self, stmt: &If) {
+    let condition = self.evaluate(stmt.condition()).unwrap();
+    let is_truthy = self.is_truthy(condition);
+    match is_truthy {
+        LoxValue::Boolean(true) => self.execute(stmt.then_branch()),
+        _ => {
+          if let Some(else_branch) = stmt.else_branch() {
+              self.execute(else_branch);
+          }
+        }
+    }
   }
 
   fn visit_print_statement(&mut self, stmt: &Print) {
@@ -137,11 +172,21 @@ impl StmtVisitor for Interpreter {
     if let Ok(initializer) = self.evaluate(stmt.initializer()) {
       value = initializer;
     }
-    self.environment.define(stmt.name().lexeme(), value);
+    let mut env_ref = self.environment.borrow_mut();
+    env_ref.define(stmt.name().lexeme(), value);
   }
 
   fn visit_block_statement(&mut self, stmt: &Block) {
-    self.execute_block(stmt.statements(), Environment::new());
+    let env_ref = Rc::clone(&self.environment);
+    self.execute_block(stmt.statements(), Rc::new(RefCell::new(Environment::new_with(env_ref))));
+  }
+
+  fn visit_while_statement(&mut self, stmt: &While) {
+    let truth = LoxValue::Boolean(true);
+    while self.evaluate(stmt.condition()).unwrap() == truth {
+      println!("Executing!");
+      self.execute(stmt.body())
+    }
   }
 }
 
@@ -155,8 +200,8 @@ impl Interpreter {
       }
   }
 
-  fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Environment) {
-    let previous = self.environment.clone();
+  fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Rc<RefCell<Environment>>) {
+    let previous = Rc::clone(&self.environment);
 
     self.environment = environment;
 

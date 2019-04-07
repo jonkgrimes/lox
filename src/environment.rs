@@ -1,11 +1,13 @@
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use crate::lox_value::LoxValue;
 use crate::token::Token;
 
 #[derive(Clone)]
 pub struct Environment {
-  enclosing: Option<Box<Environment>>,
+  enclosing: Option<Rc<RefCell<Environment>>>,
   values: HashMap<String, LoxValue>
 }
 
@@ -14,8 +16,8 @@ impl Environment {
     Environment { values: HashMap::new(), enclosing: None }
   }
 
-  pub fn new_with(enclosing: Environment) -> Environment {
-    Environment { values: HashMap::new(), enclosing: Some(Box::new(enclosing)) }
+  pub fn new_with(enclosing: Rc<RefCell<Environment>>) -> Environment {
+    Environment { values: HashMap::new(), enclosing: Some(enclosing) }
   }
 
   pub fn define(&mut self, name: String, value: LoxValue) {
@@ -23,26 +25,32 @@ impl Environment {
   }
 
   pub fn get(&mut self, name: Token) -> LoxValue {
-      if let Some(mut enclosing) = self.enclosing.clone() {
-          return enclosing.get(name.clone());
-      }
-
       if let Some(value) = self.values.get(&name.lexeme()) {
           value.clone()
       } else { 
+        if let Some(enclosing) = &self.enclosing {
+            return (*enclosing.borrow_mut()).get(name.clone());
+        } else {
           LoxValue::Nil
+        }
       }
   }
 
   pub fn assign(&mut self, name: Token, value: LoxValue) {
     let variable = name.lexeme();
+    println!("Environment = {:?}", self.values);
+    println!("Assigning {} to {}", value, variable);
     match self.values.insert(variable, value.clone()) {
-      Some(_) => (),
-      None => println!("Variable did not exist.")
-    }
-
-    if let Some(mut enclosing) = self.enclosing.clone() {
-      enclosing.assign(name, value.clone());
+      Some(_) => {
+        println!("Assigned!")
+      },
+      None => {
+        if let Some(enclosing) = &self.enclosing {
+          (*enclosing.borrow_mut()).assign(name, value.clone());
+        } else {
+          panic!("Variable did not exist!");
+        }
+      }
     }
   }
 }

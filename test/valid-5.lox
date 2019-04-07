@@ -1,0 +1,5 @@
+var a = true;
+if (a) print a;
+
+var b = false;
+if (b) print b; else print "b was false";

@@ -34,6 +34,8 @@ pub trait Visitor {
   fn visit_expression_statement(&mut self, stmt: &Expression) -> Self::Value;
   fn visit_var_statement(&mut self, stmt: &Var) -> Self::Value;
   fn visit_block_statement(&mut self, stmt: &Block) -> Self::Value;
+  fn visit_if_statement(&mut self, stmt: &If) -> Self::Value;
+  fn visit_while_statement(&mut self, stmt: &While) -> Self::Value;
 }
 
 pub trait Visitable
@@ -135,5 +137,66 @@ impl Block {
 
   pub fn statements(&self) -> Vec<BoxedStmt> {
       self.statements.clone()
+  }
+}
+
+#[derive(Clone)]
+pub struct If {
+  condition: BoxedExpr,
+  then_branch: BoxedStmt,
+  else_branch: Option<BoxedStmt>
+}
+
+impl Stmt for If {}
+
+impl Visitable for If {
+  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+    visitor.visit_if_statement(self)
+  }
+}
+
+impl If {
+  pub fn new(condition: BoxedExpr, then_branch: BoxedStmt, else_branch: Option<BoxedStmt>)  -> BoxedStmt {
+    Box::new(If { condition, then_branch, else_branch })
+  }
+
+  pub fn condition(&self) -> BoxedExpr {
+    self.condition.clone()
+  }
+
+  pub fn then_branch(&self) -> BoxedStmt {
+    self.then_branch.clone()
+  }
+
+  pub fn else_branch(&self) -> Option<BoxedStmt> {
+    self.else_branch.clone()
+  }
+}
+
+#[derive(Clone)]
+pub struct While {
+  condition: BoxedExpr,
+  body: BoxedStmt
+}
+
+impl Stmt for While {}
+
+impl Visitable for While {
+  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+    visitor.visit_while_statement(self)
+  }
+}
+
+impl While {
+  pub fn new(condition: BoxedExpr, body: BoxedStmt)  -> BoxedStmt {
+    Box::new(While { condition, body })
+  }
+
+  pub fn condition(&self) -> BoxedExpr {
+    self.condition.clone()
+  }
+
+  pub fn body(&self) -> BoxedStmt {
+    self.body.clone()
   }
 }
