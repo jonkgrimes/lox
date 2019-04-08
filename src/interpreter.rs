@@ -184,7 +184,6 @@ impl StmtVisitor for Interpreter {
   fn visit_while_statement(&mut self, stmt: &While) {
     let truth = LoxValue::Boolean(true);
     while self.evaluate(stmt.condition()).unwrap() == truth {
-      println!("Executing!");
       self.execute(stmt.body())
     }
   }

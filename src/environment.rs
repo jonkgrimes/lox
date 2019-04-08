@@ -38,11 +38,8 @@ impl Environment {
 
   pub fn assign(&mut self, name: Token, value: LoxValue) {
     let variable = name.lexeme();
-    println!("Environment = {:?}", self.values);
-    println!("Assigning {} to {}", value, variable);
     match self.values.insert(variable, value.clone()) {
       Some(_) => {
-        println!("Assigned!")
       },
       None => {
         if let Some(enclosing) = &self.enclosing {

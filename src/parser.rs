@@ -49,7 +49,12 @@ impl Parser {
     Var::new(name, initializer)
   }
 
+
   fn statement(&mut self) -> Box<dyn Stmt> {
+    if self.matches(&[TokenType::For]) {
+      return self.for_statement();
+    }
+
     if self.matches(&[TokenType::If]) {
       return self.if_statement();
     }
@@ -67,6 +72,55 @@ impl Parser {
     }
 
     self.expression_statement()
+  }
+
+  fn for_statement(&mut self) -> Box<dyn Stmt> {
+      self.consume(TokenType::LeftParen, "Expect '(' after 'for'.").ok();
+
+      let initializer = if self.matches(&[TokenType::Semicolon]) {
+        None
+      } else if self.matches(&[TokenType::Var]) {
+        Some(self.var_declaration())
+      } else {
+        Some(self.expression_statement())
+      };
+
+      let condition = if !self.check(TokenType::Semicolon) {
+        Some(self.expression())
+      } else {
+        None
+      };
+
+      let increment = if !self.check(TokenType::RightParen) {
+        Some(self.expression())
+      } else {
+        None
+      };
+
+      self.consume(TokenType::LeftParen, "Expect ')' after 'for' clauses.").ok();
+
+      let mut body = self.statement();
+
+      if let Some(increment) = increment {
+          body = Block::new(vec![body, Expression::new(increment)])
+      }
+
+      let for_condition = match condition {
+        Some(condition) => {
+          condition
+        },
+        None => {
+          Literal::new(LoxValue::Boolean(true))
+        }
+      };
+
+      body = While::new(for_condition, body);
+
+      if let Some(initializer) = initializer {
+        body = Block::new(vec![initializer, body])
+      }
+
+      body
   }
 
   fn if_statement(&mut self) -> Box<dyn Stmt> {
