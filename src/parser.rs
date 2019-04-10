@@ -27,7 +27,6 @@ impl Parser {
   }
 
   // Statements
-
   fn declaration(&mut self) -> Box<dyn Stmt> {
     if self.matches(&[TokenType::Var]) {
         return self.var_declaration();
@@ -90,14 +89,14 @@ impl Parser {
       } else {
         None
       };
+      self.consume(TokenType::Semicolon, "Expect ';' after loop condition.").ok();
 
       let increment = if !self.check(TokenType::RightParen) {
         Some(self.expression())
       } else {
         None
       };
-
-      self.consume(TokenType::LeftParen, "Expect ')' after 'for' clauses.").ok();
+      self.consume(TokenType::RightParen, "Expect ')' after 'for' clauses.").ok();
 
       let mut body = self.statement();
 
