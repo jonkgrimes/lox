@@ -4,9 +4,9 @@ use std::fmt;
 use std::fmt::Display;
 
 use crate::token::{Token, TokenType};
-use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping, Variable, Assign, Logical};
+use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping, Variable, Assign, Logical, Call};
 use crate::lox_value::LoxValue;
-use crate::stmt::{Stmt, Print, Expression, Var, Block, If, While};
+use crate::stmt::{Stmt, Print, Expression, Var, Block, If, While, Function};
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -28,11 +28,43 @@ impl Parser {
 
   // Statements
   fn declaration(&mut self) -> Box<dyn Stmt> {
+    if self.matches(&[TokenType::Fun]) {
+        return self.function("function");
+    }
     if self.matches(&[TokenType::Var]) {
         return self.var_declaration();
     }
 
     self.statement()
+  }
+
+  fn function(&mut self, kind: &str) -> Box<dyn Stmt> {
+    let name = self.consume(TokenType::Identifier, format!("Expect {} name", kind).as_str()).unwrap();
+
+    self.consume(TokenType::LeftParen, format!("Expect '(' after {} name", kind).as_str()).ok();
+
+    let parameters: Vec<Token> = Vec::new();
+
+    if !self.check(TokenType::RightParen) {
+      loop {
+        if parameters.len() > 10 {
+          panic!("Cannot a have more than 10 parameters for a function");
+        }
+
+        parameters.push(self.consume(TokenType::Identifier, "Expect parameter name").unwrap());
+
+        if !self.matches(&[TokenType::Comma]) {
+            break;
+        }
+      }
+    }
+    self.consume(TokenType::RightParen, "Expect ')' after parameters").ok();
+
+    self.consume(TokenType::LeftBrace, format!("Expect '{{' before {} body.", kind).as_str());
+
+    let body = self.block();
+
+    Function::new(name, parameters, body)
   }
 
   fn var_declaration(&mut self) -> Box<dyn Stmt> {
@@ -265,7 +297,41 @@ impl Parser {
       return Unary::new(operator, right);
     }
 
-    self.primary()
+    self.call()
+  }
+
+  fn call(&mut self) -> BoxedExpr {
+    let mut expr = self.primary();
+
+    loop {
+      if self.matches(&[TokenType::LeftParen]) {
+        expr = self.finish_call(expr);
+      } else {
+        break;
+      }
+    }
+
+    expr
+  }
+
+  fn finish_call(&mut self, callee: BoxedExpr) -> BoxedExpr {
+    let mut arguments: Vec<BoxedExpr> = Vec::new();
+
+    if !self.check(TokenType::RightParen) {
+      loop {
+        if arguments.len() > 10 {
+          panic!("Cannot have more than 10 arguments");
+        }
+
+        arguments.push(self.expression());
+        if self.matches(&[TokenType::Comma]) {
+          break;
+        }
+      }
+    }
+    let paren = self.consume(TokenType::RightParen, "Expect ')' after arguments").unwrap();
+
+    Call::new(callee, paren, arguments)
   }
 
   fn primary(&mut self) -> BoxedExpr {

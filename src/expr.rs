@@ -57,6 +57,7 @@ pub trait Visitor {
     fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError>;
     fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError>;
     fn visit_logical(&mut self, expr: &Logical) -> Result<Self::Value, LoxError>;
+    fn visit_call(&mut self, expr: &Call) -> Result<Self::Value, LoxError>;
 }
 
 #[derive(Clone)]
@@ -329,5 +330,48 @@ impl Assign {
 
     pub fn value(&self) -> BoxedExpr {
         self.value.clone()
+    }
+}
+
+#[derive(Clone)]
+pub struct Call {
+    callee: BoxedExpr,
+    paren: Token,
+    arguments: Vec<BoxedExpr>,
+}
+
+impl Expr for Call {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl Visitable for Call {
+    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+        visitor.visit_call(self)
+    }
+}
+
+impl Display for Call {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "call {}", self.callee)
+    }
+}
+
+impl Call {
+    pub fn new(callee: BoxedExpr, paren: Token, arguments: Vec<BoxedExpr>) -> Box<Call> {
+        Box::new(Call { callee, paren, arguments })
+    }
+
+    pub fn callee(&self) -> BoxedExpr {
+        self.callee.clone()
+    }
+
+    pub fn paren(&self) -> Token {
+        self.paren.clone()
+    }
+
+    pub fn arguments(&self) -> Vec<BoxedExpr> {
+        self.arguments.clone()
     }
 }

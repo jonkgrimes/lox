@@ -36,6 +36,7 @@ pub trait Visitor {
   fn visit_block_statement(&mut self, stmt: &Block) -> Self::Value;
   fn visit_if_statement(&mut self, stmt: &If) -> Self::Value;
   fn visit_while_statement(&mut self, stmt: &While) -> Self::Value;
+  fn visit_function_statement(&mut self, stmt: &Function) -> Self::Value;
 }
 
 pub trait Visitable
@@ -200,3 +201,37 @@ impl While {
     self.body.clone()
   }
 }
+
+#[derive(Clone)]
+pub struct Function {
+  name: Token,
+  params: Vec<Token>,
+  body: Vec<BoxedStmt>,
+}
+
+impl Stmt for Function {}
+
+impl Visitable for Function {
+  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+    visitor.visit_function_statement(self)
+  }
+}
+
+impl Function {
+  pub fn new(name: Token, params: Vec<Token>, body: Vec<BoxedStmt>)  -> BoxedStmt {
+    Box::new(Function { name, params, body })
+  }
+
+  pub fn name(&self) -> Token {
+    self.name.clone()
+  }
+
+  pub fn params(&self) -> Vec<Token> {
+    self.params.clone()
+  }
+
+  pub fn body(&self) -> Vec<BoxedStmt> {
+    self.body.clone()
+  }
+}
+
