@@ -3,10 +3,11 @@ use std::cell::RefCell;
 use crate::token::{TokenType};
 use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
+use crate::lox_function::{LoxFunction};
+use crate::lox_callable::{LoxCallable};
 use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign, Logical, Call};
 use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block, If, While, Function};
 use crate::environment::Environment;
-use crate::lox_callable::LoxCallable;
 
 pub struct Interpreter {
   environment: Rc<RefCell<Environment>>
@@ -74,16 +75,15 @@ impl ExprVisitor for Interpreter {
   fn visit_call(&mut self, expr: &Call) -> Result<Self::Value, LoxError> {
     let callee = self.evaluate(expr.callee());
 
-    let arguments = expr.arguments().iter().map(|&argument| {
-      self.evaluate(argument);
-    });
+    let arguments: Vec<LoxValue> = expr.arguments().iter().map(|&argument| {
+      self.evaluate(argument).unwrap()
+    }).collect();
 
     match callee {
-      Ok(callee) => {
-        if let Some(function) = callee.as_any().downcast_ref::<LoxCallable>() {
-            return function.call(self, arguments)
-        } else {
-          panic!("Can only call functions and classes");
+      Ok(callee_value) => {
+        match callee_value {
+          LoxValue::Function(function) => { function.call(self, arguments) },
+          _ => Ok(callee_value)
         }
       },
       _ => {

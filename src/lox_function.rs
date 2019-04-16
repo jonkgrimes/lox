@@ -1,20 +1,34 @@
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use crate::stmt::{BoxedStmt, Function};
 use crate::lox_callable::LoxCallable;
+use crate::lox_value::LoxValue;
+use crate::lox_error::LoxError;
 use crate::environment::Environment;
+use crate::interpreter::Interpreter;
+use crate::expr::BoxedExpr;
 
+#[derive(Debug, Clone)]
 pub struct LoxFunction {
   declaration: Function
 }
 
 impl LoxCallable for LoxFunction {
-  fn call(&self, interpreter: Interpreter, arguments: Vec<BoxedExpr>) {
-    let environment = Environment::new(); 
+  fn arity() {
 
-    for param in self.declaration.params.iter().enumerable() {
+  }
+
+  fn call(self, interpreter: &mut Interpreter, arguments: Vec<LoxValue>) -> Result<LoxValue, LoxError> {
+    let environment = Rc::new(RefCell::new(Environment::new())); 
+
+    for (i, param) in self.declaration.params().iter().enumerate() {
       let name = param.lexeme();
-      let argument = arguments.get
-      environment.define(name: String, value: LoxValue)
+      let argument = arguments.get(i).unwrap();
+      environment.define(name, *argument);
     }
+
+    interpreter.execute_block(self.declaration.body, environment)
   }
 }
 

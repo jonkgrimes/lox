@@ -20,6 +20,7 @@ mod interpreter;
 mod lox_value;
 mod lox_error;
 mod lox_callable;
+mod lox_function;
 mod environment;
 
 use scanner::{Scanner};

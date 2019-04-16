@@ -202,7 +202,7 @@ impl While {
   }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Function {
   name: Token,
   params: Vec<Token>,
