@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::cmp::PartialEq;
 
 use crate::stmt::{BoxedStmt, Function};
 use crate::lox_callable::LoxCallable;
@@ -25,11 +26,19 @@ impl LoxCallable for LoxFunction {
     for (i, param) in self.declaration.params().iter().enumerate() {
       let name = param.lexeme();
       let argument = arguments.get(i).unwrap();
-      environment.define(name, *argument);
+      let mut env_ref = environment.borrow_mut();
+      env_ref.define(name, *argument);
     }
 
-    interpreter.execute_block(self.declaration.body, environment)
+    interpreter.execute_block(self.declaration.body(), environment);
+
+    Ok(LoxValue::Nil)
   }
 }
 
+impl PartialEq for LoxFunction {
+    fn eq(&self, other: &LoxFunction) -> bool {
+      false
+    }
+}
 

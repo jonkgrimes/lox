@@ -1,10 +1,14 @@
+use std::fmt::Debug;
+
 use crate::expr::{BoxedExpr};
 use crate::token::Token;
 
 pub type BoxedStmt = Box<dyn Stmt>;
 
 pub trait Stmt: CloneableStmt
-where Self: Visitable {
+where Self: Visitable,
+      Self: Debug
+{
 }
 
 pub trait CloneableStmt {
@@ -44,7 +48,7 @@ pub trait Visitable
     fn accept(&self, visitor: &mut Visitor<Value=()>);
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Expression {
   expr: BoxedExpr
 }
@@ -67,7 +71,7 @@ impl Visitable for Expression {
   }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Print {
   expr: BoxedExpr
 }
@@ -214,6 +218,10 @@ impl Stmt for Function {}
 impl Visitable for Function {
   fn accept(&self, visitor: &mut Visitor<Value=()>) {
     visitor.visit_function_statement(self)
+  }
+
+  fn body(&self) -> Vec<BoxedStmt> {
+    self.body.clone()
   }
 }
 

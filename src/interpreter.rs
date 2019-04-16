@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use crate::token::{TokenType};
 use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
-use crate::lox_function::{LoxFunction};
 use crate::lox_callable::{LoxCallable};
 use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign, Logical, Call};
 use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block, If, While, Function};
@@ -225,7 +224,7 @@ impl Interpreter {
       }
   }
 
-  fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Rc<RefCell<Environment>>) {
+  pub fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Rc<RefCell<Environment>>) {
     let previous = Rc::clone(&self.environment);
 
     self.environment = environment;
