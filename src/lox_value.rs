@@ -21,7 +21,8 @@ impl Display for LoxValue {
             LoxValue::Boolean(value) => { write!(f, "{}", value) },
             LoxValue::Number(value) => { write!(f, "{}", value) },
             LoxValue::String(value) => { write!(f, "{}", value) },
-            LoxValue::Nil => { write!(f, "nil") }
+            LoxValue::Nil => { write!(f, "nil") },
+            LoxValue::Function(function) => { write!(f, "function {}", "Name")}
         }
     }
 }
@@ -35,6 +36,7 @@ impl Neg for LoxValue {
             LoxValue::Number(value) => Ok(LoxValue::Number(-value)),
             LoxValue::Boolean(_) => Err(LoxError::RuntimeError("Boolean values cannot be negated".to_string())),
             LoxValue::String(_) => Err(LoxError::RuntimeError("String values cannot be negated".to_string())),
+            LoxValue::Function(_) => Err(LoxError::RuntimeError("Functions cannot be negated".to_string()))
         }
     }
 }
@@ -109,6 +111,9 @@ impl Add for LoxValue {
             },
             LoxValue::Nil => {
                 Err(LoxError::RuntimeError("Cannot add value to nil.".to_string()))
+            },
+            LoxValue::Function(_) => {
+                Err(LoxError::RuntimeError("Cannot add value to a function".to_string()))
             }
         }
     }

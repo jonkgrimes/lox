@@ -27,7 +27,7 @@ impl LoxCallable for LoxFunction {
       let name = param.lexeme();
       let argument = arguments.get(i).unwrap();
       let mut env_ref = environment.borrow_mut();
-      env_ref.define(name, *argument);
+      env_ref.define(name, argument.clone());
     }
 
     interpreter.execute_block(self.declaration.body(), environment);

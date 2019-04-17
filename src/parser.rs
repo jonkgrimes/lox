@@ -43,7 +43,7 @@ impl Parser {
 
     self.consume(TokenType::LeftParen, format!("Expect '(' after {} name", kind).as_str()).ok();
 
-    let parameters: Vec<Token> = Vec::new();
+    let mut parameters: Vec<Token> = Vec::new();
 
     if !self.check(TokenType::RightParen) {
       loop {

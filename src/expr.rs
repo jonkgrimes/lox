@@ -10,6 +10,7 @@ pub type LoxResult = Result<LoxValue, LoxError>;
 
 pub trait Expr: CloneableExpr
 where Self: std::fmt::Display,
+      Self: std::fmt::Debug,
       Self: Visitable
 {
     fn as_any(&self) -> &dyn Any;
@@ -60,7 +61,7 @@ pub trait Visitor {
     fn visit_call(&mut self, expr: &Call) -> Result<Self::Value, LoxError>;
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Literal<T> {
     value: T
 }
@@ -87,7 +88,8 @@ impl Visitable for Literal<LoxValue> {
             LoxValue::Nil => visitor.visit_nil_literal(self),
             LoxValue::Number(_number) => visitor.visit_number_literal(self),
             LoxValue::String(_string) => visitor.visit_string_literal(self),
-            LoxValue::Boolean(_boolean) => visitor.visit_boolean_literal(self)
+            LoxValue::Boolean(_boolean) => visitor.visit_boolean_literal(self),
+            LoxValue::Function(_function) => panic!("Can't evaluate a function as a literal value")
         }
     }
 }
@@ -104,7 +106,7 @@ impl Literal<LoxValue> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Logical {
     left: BoxedExpr,
     operator: Token,
@@ -147,7 +149,7 @@ impl Logical {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Unary { 
     operator: Token,
     right: Box<dyn Expr>
@@ -185,7 +187,7 @@ impl Display for Unary {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Binary {
     left: Box<dyn Expr>,
     operator: Token,
@@ -228,7 +230,7 @@ impl Display for Binary {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Grouping {
     expression: Box<dyn Expr>
 }
@@ -261,7 +263,7 @@ impl Display for Grouping {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Variable {
    name: Token
 }
@@ -294,7 +296,7 @@ impl Display for Variable {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Assign {
     name: Token,
     value: BoxedExpr
@@ -333,7 +335,7 @@ impl Assign {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Call {
     callee: BoxedExpr,
     paren: Token,

@@ -94,7 +94,7 @@ impl Visitable for Print {
   }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Var {
     name: Token,
     initializer: BoxedExpr
@@ -122,7 +122,7 @@ impl Visitable for Var {
   }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Block {
   statements: Vec<BoxedStmt>
 }
@@ -145,7 +145,7 @@ impl Block {
   }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct If {
   condition: BoxedExpr,
   then_branch: BoxedStmt,
@@ -178,7 +178,7 @@ impl If {
   }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct While {
   condition: BoxedExpr,
   body: BoxedStmt
@@ -218,10 +218,6 @@ impl Stmt for Function {}
 impl Visitable for Function {
   fn accept(&self, visitor: &mut Visitor<Value=()>) {
     visitor.visit_function_statement(self)
-  }
-
-  fn body(&self) -> Vec<BoxedStmt> {
-    self.body.clone()
   }
 }
 

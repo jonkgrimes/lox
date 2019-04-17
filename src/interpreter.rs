@@ -74,8 +74,8 @@ impl ExprVisitor for Interpreter {
   fn visit_call(&mut self, expr: &Call) -> Result<Self::Value, LoxError> {
     let callee = self.evaluate(expr.callee());
 
-    let arguments: Vec<LoxValue> = expr.arguments().iter().map(|&argument| {
-      self.evaluate(argument).unwrap()
+    let arguments: Vec<LoxValue> = expr.arguments().iter().map(|argument| {
+      self.evaluate(argument.clone()).unwrap()
     }).collect();
 
     match callee {
@@ -221,6 +221,7 @@ impl Interpreter {
         LoxValue::Number(_) => LoxValue::Boolean(true),
         LoxValue::String(_) => LoxValue::Boolean(true),
         LoxValue::Boolean(value) => LoxValue::Boolean(value),
+        LoxValue::Function(_) => LoxValue::Boolean(true)
       }
   }
 
