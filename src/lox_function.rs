@@ -17,7 +17,6 @@ pub struct LoxFunction {
 
 impl LoxCallable for LoxFunction {
   fn arity() {
-
   }
 
   fn call(self, interpreter: &mut Interpreter, arguments: Vec<LoxValue>) -> Result<LoxValue, LoxError> {
@@ -42,3 +41,8 @@ impl PartialEq for LoxFunction {
     }
 }
 
+impl LoxFunction {
+  pub fn new(declaration: Function) -> LoxFunction {
+    LoxFunction { declaration }
+  }
+}

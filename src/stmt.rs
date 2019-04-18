@@ -41,6 +41,7 @@ pub trait Visitor {
   fn visit_if_statement(&mut self, stmt: &If) -> Self::Value;
   fn visit_while_statement(&mut self, stmt: &While) -> Self::Value;
   fn visit_function_statement(&mut self, stmt: &Function) -> Self::Value;
+  fn visit_return_statement(&mut self, stmt: &Return) -> Self::Value;
 }
 
 pub trait Visitable
@@ -236,6 +237,34 @@ impl Function {
 
   pub fn body(&self) -> Vec<BoxedStmt> {
     self.body.clone()
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct Return {
+  keyword: Token,
+  value: BoxedExpr,
+}
+
+impl Stmt for Return {}
+
+impl Visitable for Return {
+  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+    visitor.visit_return_statement(self)
+  }
+}
+
+impl Return {
+  pub fn new(keyword: Token, value: BoxedExpr)  -> BoxedStmt {
+    Box::new(Return { keyword, value })
+  }
+
+  pub fn keyword(&self) -> Token {
+    self.keyword.clone()
+  }
+
+  pub fn value(&self) -> BoxedExpr {
+    self.value.clone()
   }
 }
 

@@ -5,8 +5,9 @@ use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
 use crate::lox_callable::{LoxCallable};
 use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign, Logical, Call};
-use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block, If, While, Function};
+use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block, If, While, Function, Return};
 use crate::environment::Environment;
+use crate::lox_function::LoxFunction;
 
 pub struct Interpreter {
   environment: Rc<RefCell<Environment>>
@@ -188,6 +189,10 @@ impl StmtVisitor for Interpreter {
     println!("{}", value.unwrap());
   }
 
+  fn visit_return_statement(&mut self, stmt: &Return) {
+    unimplemented!()
+  }
+
   fn visit_var_statement(&mut self, stmt: &Var) {
     let mut value = LoxValue::Nil;
     if let Ok(initializer) = self.evaluate(stmt.initializer()) {
@@ -210,7 +215,9 @@ impl StmtVisitor for Interpreter {
   }
 
   fn visit_function_statement(&mut self, stmt: &Function) {
-    unimplemented!()
+    let function = LoxFunction::new(stmt.clone());
+    let mut env_ref = self.environment.borrow_mut();
+    env_ref.define(stmt.name().lexeme(), LoxValue::Function(function));
   }
 }
 

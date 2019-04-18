@@ -154,7 +154,7 @@ fn scan_token(c: char, line: &mut u32, iter: &mut ScannerIterator) -> Result<Opt
         c => {
             if c.is_numeric() { 
                 (scan_number(c, iter), TokenType::Number)
-            } else if c.is_alphabetic() {
+            } else if c.is_alphabetic() || c == '_' {
                 scan_identifier(c, iter)
             } else { 
                 return Err(ParserError::new(*line, c))

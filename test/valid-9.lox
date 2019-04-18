@@ -1,0 +1,6 @@
+fun addOne(n) {
+  var a = n + 1;
+  print a;
+}
+
+addOne(1);

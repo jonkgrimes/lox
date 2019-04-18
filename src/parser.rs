@@ -5,8 +5,8 @@ use std::fmt::Display;
 
 use crate::token::{Token, TokenType};
 use crate::expr::{BoxedExpr, Unary, Binary, Literal, Grouping, Variable, Assign, Logical, Call};
+use crate::stmt::{Stmt, Print, Expression, Var, Block, If, While, Function, Return};
 use crate::lox_value::LoxValue;
-use crate::stmt::{Stmt, Print, Expression, Var, Block, If, While, Function};
 
 pub struct Parser {
   tokens: Vec<Token>,
@@ -60,7 +60,7 @@ impl Parser {
     }
     self.consume(TokenType::RightParen, "Expect ')' after parameters").ok();
 
-    self.consume(TokenType::LeftBrace, format!("Expect '{{' before {} body.", kind).as_str());
+    self.consume(TokenType::LeftBrace, format!("Expect '{{' before {} body.", kind).as_str()).ok();
 
     let body = self.block();
 
@@ -92,6 +92,10 @@ impl Parser {
 
     if self.matches(&[TokenType::Print]) {
       return self.print_statment();
+    }
+
+    if self.matches(&[TokenType::Return]) {
+      return self.return_statement();
     }
 
     if self.matches(&[TokenType::While]) {
@@ -173,6 +177,19 @@ impl Parser {
     let expr = self.expression();
     self.consume(TokenType::Semicolon, "Expect ';' after value.").ok();
     Print::new(expr)
+  }
+
+  fn return_statement(&mut self) -> Box<dyn Stmt> {
+    let previous = self.previous();
+    let value = if !self.check(TokenType::Semicolon) {
+      self.expression()
+    } else {
+      Literal::nil()
+    };
+
+    self.consume(TokenType::Semicolon, "Expect ';' after value.").ok();
+
+    Return::new(previous, value)
   }
 
   fn while_statement(&mut self) -> Box<dyn Stmt> {
@@ -324,7 +341,8 @@ impl Parser {
         }
 
         arguments.push(self.expression());
-        if self.matches(&[TokenType::Comma]) {
+
+        if !self.matches(&[TokenType::Comma]) {
           break;
         }
       }

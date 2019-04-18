@@ -1,0 +1,7 @@
+fun square(n) {
+  print n * n;
+}
+
+square(5);
+square(10);
+square(16);
