@@ -20,6 +20,7 @@ impl LoxCallable for LoxFunction {
   }
 
   fn call(self, interpreter: &mut Interpreter, arguments: Vec<LoxValue>) -> Result<LoxValue, LoxError> {
+    println!("Calling {} with {:?}", self.declaration.name(), arguments);
     let environment = Rc::new(RefCell::new(Environment::new())); 
 
     for (i, param) in self.declaration.params().iter().enumerate() {
@@ -29,9 +30,16 @@ impl LoxCallable for LoxFunction {
       env_ref.define(name, argument.clone());
     }
 
-    interpreter.execute_block(self.declaration.body(), environment);
-
-    Ok(LoxValue::Nil)
+    match interpreter.execute_block(self.declaration.body(), environment) {
+      Some(value) => {
+        println!("Returning {}", value);
+        Ok(value)
+      },
+      None => {
+        println!("Returning nil");
+        Ok(LoxValue::Nil)
+      }
+    }
   }
 }
 

@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use std::ops::{Sub, Add, Not, Div, Mul, Neg};
 use std::cmp::{PartialOrd, Ordering};
-use std::any::Any;
 
 use crate::lox_error::LoxError;
 use crate::lox_function::LoxFunction;
@@ -153,10 +152,4 @@ impl PartialOrd for LoxValue {
       _ => panic!("Can't compare these two types")
     }
   }
-}
-
-impl LoxValue {
-    pub fn as_any(&self) -> &dyn Any {
-        self
-    }
 }

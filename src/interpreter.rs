@@ -22,11 +22,11 @@ impl Interpreter {
 
   pub fn interpret(&mut self, statements: Vec<Box<dyn Stmt>>) {
     for statement in statements {
-      self.execute(statement)
+      self.execute(statement);
     }
   }
 
-  pub fn execute(&mut self, stmt: Box<dyn Stmt>) {
+  pub fn execute(&mut self, stmt: Box<dyn Stmt>) -> Option<LoxValue> {
     stmt.accept(self)
   }
 
@@ -73,6 +73,7 @@ impl ExprVisitor for Interpreter {
   }
 
   fn visit_call(&mut self, expr: &Call) -> Result<Self::Value, LoxError> {
+    println!("visit_call: {}", expr);
     let callee = self.evaluate(expr.callee());
 
     let arguments: Vec<LoxValue> = expr.arguments().iter().map(|argument| {
@@ -83,7 +84,9 @@ impl ExprVisitor for Interpreter {
       Ok(callee_value) => {
         match callee_value {
           LoxValue::Function(function) => { function.call(self, arguments) },
-          _ => Ok(callee_value)
+          _ => {
+            Ok(callee_value)
+          }
         }
       },
       _ => {
@@ -165,13 +168,14 @@ impl ExprVisitor for Interpreter {
 }
 
 impl StmtVisitor for Interpreter {
-  type Value = ();
+  type Value = Option<LoxValue>;
 
-  fn visit_expression_statement(&mut self, stmt: &Expression) {
+  fn visit_expression_statement(&mut self, stmt: &Expression) -> Option<LoxValue> {
     self.evaluate(stmt.clone().expr()).ok();
+    None
   }
 
-  fn visit_if_statement(&mut self, stmt: &If) {
+  fn visit_if_statement(&mut self, stmt: &If) -> Option<LoxValue> {
     let condition = self.evaluate(stmt.condition()).unwrap();
     let is_truthy = self.is_truthy(condition);
     match is_truthy {
@@ -180,44 +184,56 @@ impl StmtVisitor for Interpreter {
           if let Some(else_branch) = stmt.else_branch() {
               self.execute(else_branch);
           }
+          None
         }
     }
   }
 
-  fn visit_print_statement(&mut self, stmt: &Print) {
+  fn visit_print_statement(&mut self, stmt: &Print) -> Option<LoxValue> {
     let value = self.evaluate(stmt.clone().expr());
     println!("{}", value.unwrap());
+    None
   }
 
-  fn visit_return_statement(&mut self, stmt: &Return) {
-    unimplemented!()
+  fn visit_return_statement(&mut self, stmt: &Return) -> Option<LoxValue> {
+    if let Ok(value) = self.evaluate(stmt.value()) {
+      println!("Return did have a value, returning it");
+      Some(value)
+    } else { 
+      println!("Return did not have a value, returning nil");
+      None
+    }
   }
 
-  fn visit_var_statement(&mut self, stmt: &Var) {
+  fn visit_var_statement(&mut self, stmt: &Var) -> Option<LoxValue> {
     let mut value = LoxValue::Nil;
     if let Ok(initializer) = self.evaluate(stmt.initializer()) {
       value = initializer;
     }
     let mut env_ref = self.environment.borrow_mut();
     env_ref.define(stmt.name().lexeme(), value);
+    None
   }
 
-  fn visit_block_statement(&mut self, stmt: &Block) {
+  fn visit_block_statement(&mut self, stmt: &Block) -> Option<LoxValue> {
     let env_ref = Rc::clone(&self.environment);
     self.execute_block(stmt.statements(), Rc::new(RefCell::new(Environment::new_with(env_ref))));
+    None
   }
 
-  fn visit_while_statement(&mut self, stmt: &While) {
+  fn visit_while_statement(&mut self, stmt: &While) -> Option<LoxValue> {
     let truth = LoxValue::Boolean(true);
     while self.evaluate(stmt.condition()).unwrap() == truth {
-      self.execute(stmt.body())
+      self.execute(stmt.body());
     }
+    None
   }
 
-  fn visit_function_statement(&mut self, stmt: &Function) {
+  fn visit_function_statement(&mut self, stmt: &Function) -> Option<LoxValue> {
     let function = LoxFunction::new(stmt.clone());
     let mut env_ref = self.environment.borrow_mut();
     env_ref.define(stmt.name().lexeme(), LoxValue::Function(function));
+    None
   }
 }
 
@@ -232,16 +248,24 @@ impl Interpreter {
       }
   }
 
-  pub fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Rc<RefCell<Environment>>) {
+  pub fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Rc<RefCell<Environment>>) -> Option<LoxValue> {
+    println!("execute_block, environment = {:?}", environment.borrow());
     let previous = Rc::clone(&self.environment);
+    let mut value = None;
 
     self.environment = environment;
 
     for statement in statements {
-      self.execute(statement);
+      println!("statement = {:?}", statement);
+      if let Some(return_value) = self.execute(statement) {
+        println!("value = {}", return_value);
+        value = Some(return_value);
+        break;
+      };
     }
 
     self.environment = previous;
+    value
   }
 }
 

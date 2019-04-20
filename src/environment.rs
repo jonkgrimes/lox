@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use crate::lox_value::LoxValue;
 use crate::token::Token;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Environment {
   enclosing: Option<Rc<RefCell<Environment>>>,
   values: HashMap<String, LoxValue>

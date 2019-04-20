@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use crate::expr::{BoxedExpr};
 use crate::token::Token;
+use crate::lox_value::LoxValue;
 
 pub type BoxedStmt = Box<dyn Stmt>;
 
@@ -46,7 +47,7 @@ pub trait Visitor {
 
 pub trait Visitable
 {
-    fn accept(&self, visitor: &mut Visitor<Value=()>);
+    fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue>;
 }
 
 #[derive(Debug, Clone)]
@@ -67,7 +68,7 @@ impl Expression {
 }
 
 impl Visitable for Expression {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_expression_statement(self)
   }
 }
@@ -90,7 +91,7 @@ impl Print {
 }
 
 impl Visitable for Print {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_print_statement(self)
   }
 }
@@ -118,7 +119,7 @@ impl Var {
 }
 
 impl Visitable for Var {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_var_statement(self)
   }
 }
@@ -131,7 +132,7 @@ pub struct Block {
 impl Stmt for Block {}
 
 impl Visitable for Block {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_block_statement(self)
   }
 }
@@ -156,7 +157,7 @@ pub struct If {
 impl Stmt for If {}
 
 impl Visitable for If {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_if_statement(self)
   }
 }
@@ -188,7 +189,7 @@ pub struct While {
 impl Stmt for While {}
 
 impl Visitable for While {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_while_statement(self)
   }
 }
@@ -217,7 +218,7 @@ pub struct Function {
 impl Stmt for Function {}
 
 impl Visitable for Function {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_function_statement(self)
   }
 }
@@ -249,7 +250,7 @@ pub struct Return {
 impl Stmt for Return {}
 
 impl Visitable for Return {
-  fn accept(&self, visitor: &mut Visitor<Value=()>) {
+  fn accept(&self, visitor: &mut Visitor<Value=Option<LoxValue>>) -> Option<LoxValue> {
     visitor.visit_return_statement(self)
   }
 }
