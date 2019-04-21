@@ -20,6 +20,10 @@ impl Interpreter {
     }
   }
 
+  pub fn environment(&self) -> Rc<RefCell<Environment>> {
+    Rc::clone(&self.environment)
+  }
+
   pub fn interpret(&mut self, statements: Vec<Box<dyn Stmt>>) {
     for statement in statements {
       self.execute(statement);
@@ -73,13 +77,12 @@ impl ExprVisitor for Interpreter {
   }
 
   fn visit_call(&mut self, expr: &Call) -> Result<Self::Value, LoxError> {
-    println!("visit_call: {}", expr);
     let callee = self.evaluate(expr.callee());
 
     let arguments: Vec<LoxValue> = expr.arguments().iter().map(|argument| {
       self.evaluate(argument.clone()).unwrap()
     }).collect();
-
+    
     match callee {
       Ok(callee_value) => {
         match callee_value {
@@ -156,7 +159,8 @@ impl ExprVisitor for Interpreter {
 
   fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError> {
       let mut env_ref = self.environment.borrow_mut();
-      Ok(env_ref.get(expr.name()))
+      let value = env_ref.get(expr.name());
+      Ok(value)
   }
 
   fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError> {
@@ -197,10 +201,8 @@ impl StmtVisitor for Interpreter {
 
   fn visit_return_statement(&mut self, stmt: &Return) -> Option<LoxValue> {
     if let Ok(value) = self.evaluate(stmt.value()) {
-      println!("Return did have a value, returning it");
       Some(value)
     } else { 
-      println!("Return did not have a value, returning nil");
       None
     }
   }
@@ -249,16 +251,13 @@ impl Interpreter {
   }
 
   pub fn execute_block(&mut self, statements: Vec<Box<dyn Stmt>>, environment: Rc<RefCell<Environment>>) -> Option<LoxValue> {
-    println!("execute_block, environment = {:?}", environment.borrow());
     let previous = Rc::clone(&self.environment);
     let mut value = None;
 
     self.environment = environment;
 
     for statement in statements {
-      println!("statement = {:?}", statement);
       if let Some(return_value) = self.execute(statement) {
-        println!("value = {}", return_value);
         value = Some(return_value);
         break;
       };

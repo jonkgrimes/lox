@@ -21,7 +21,7 @@ impl Display for LoxValue {
             LoxValue::Number(value) => { write!(f, "{}", value) },
             LoxValue::String(value) => { write!(f, "{}", value) },
             LoxValue::Nil => { write!(f, "nil") },
-            LoxValue::Function(function) => { write!(f, "function {}", "Name")}
+            LoxValue::Function(function) => { write!(f, "function {}", function.name())}
         }
     }
 }

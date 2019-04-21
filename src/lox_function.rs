@@ -20,8 +20,7 @@ impl LoxCallable for LoxFunction {
   }
 
   fn call(self, interpreter: &mut Interpreter, arguments: Vec<LoxValue>) -> Result<LoxValue, LoxError> {
-    println!("Calling {} with {:?}", self.declaration.name(), arguments);
-    let environment = Rc::new(RefCell::new(Environment::new())); 
+    let environment = Rc::new(RefCell::new(Environment::new_with(interpreter.environment())));
 
     for (i, param) in self.declaration.params().iter().enumerate() {
       let name = param.lexeme();
@@ -32,11 +31,9 @@ impl LoxCallable for LoxFunction {
 
     match interpreter.execute_block(self.declaration.body(), environment) {
       Some(value) => {
-        println!("Returning {}", value);
         Ok(value)
       },
       None => {
-        println!("Returning nil");
         Ok(LoxValue::Nil)
       }
     }
@@ -44,7 +41,7 @@ impl LoxCallable for LoxFunction {
 }
 
 impl PartialEq for LoxFunction {
-    fn eq(&self, other: &LoxFunction) -> bool {
+    fn eq(&self, _other: &LoxFunction) -> bool {
       false
     }
 }
@@ -52,5 +49,9 @@ impl PartialEq for LoxFunction {
 impl LoxFunction {
   pub fn new(declaration: Function) -> LoxFunction {
     LoxFunction { declaration }
+  }
+
+  pub fn name(&self) -> String {
+    self.declaration.name().lexeme()
   }
 }
