@@ -232,7 +232,7 @@ impl StmtVisitor for Interpreter {
   }
 
   fn visit_function_statement(&mut self, stmt: &Function) -> Option<LoxValue> {
-    let function = LoxFunction::new(stmt.clone());
+    let function = LoxFunction::new(stmt.clone(), Rc::clone(&self.environment));
     let mut env_ref = self.environment.borrow_mut();
     env_ref.define(stmt.name().lexeme(), LoxValue::Function(function));
     None

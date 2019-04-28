@@ -12,7 +12,8 @@ use crate::expr::BoxedExpr;
 
 #[derive(Debug, Clone)]
 pub struct LoxFunction {
-  declaration: Function
+  declaration: Function,
+  closure: Rc<RefCell<Environment>>
 }
 
 impl LoxCallable for LoxFunction {
@@ -20,7 +21,7 @@ impl LoxCallable for LoxFunction {
   }
 
   fn call(self, interpreter: &mut Interpreter, arguments: Vec<LoxValue>) -> Result<LoxValue, LoxError> {
-    let environment = Rc::new(RefCell::new(Environment::new_with(interpreter.environment())));
+    let environment = Rc::new(RefCell::new(Environment::new_with(self.closure)));
 
     for (i, param) in self.declaration.params().iter().enumerate() {
       let name = param.lexeme();
@@ -47,8 +48,8 @@ impl PartialEq for LoxFunction {
 }
 
 impl LoxFunction {
-  pub fn new(declaration: Function) -> LoxFunction {
-    LoxFunction { declaration }
+  pub fn new(declaration: Function, closure: Rc<RefCell<Environment>>) -> LoxFunction {
+    LoxFunction { declaration, closure }
   }
 
   pub fn name(&self) -> String {
