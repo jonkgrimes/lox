@@ -41,13 +41,13 @@ impl Neg for LoxValue {
 }
 
 impl Not for LoxValue {
-    type Output = LoxValue;
+    type Output = Result<LoxValue, LoxError>;
 
-    fn not(self) -> LoxValue {
+    fn not(self) -> Result<LoxValue, LoxError> {
         match self {
-            LoxValue::Boolean(value) => LoxValue::Boolean(!value),
-            LoxValue::Nil => LoxValue::Boolean(true),
-            _ => LoxValue::Boolean(false)
+            LoxValue::Boolean(value) => Ok(LoxValue::Boolean(!value)),
+            LoxValue::Nil =>            Ok(LoxValue::Boolean(true)),
+            _ =>                        Ok(LoxValue::Boolean(false))
         }
     }
 }

@@ -17,6 +17,7 @@ mod expr;
 mod stmt;
 mod parser;
 mod interpreter;
+mod resolver;
 mod lox_value;
 mod lox_error;
 mod lox_callable;

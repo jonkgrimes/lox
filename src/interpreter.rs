@@ -106,7 +106,7 @@ impl ExprVisitor for Interpreter {
         -right
       },
       TokenType::Bang => {
-        Ok(!self.is_truthy(right))
+        !right
       },
       _ => {
         Ok(LoxValue::Number(0.0))
@@ -209,8 +209,10 @@ impl StmtVisitor for Interpreter {
 
   fn visit_var_statement(&mut self, stmt: &Var) -> Option<LoxValue> {
     let mut value = LoxValue::Nil;
-    if let Ok(initializer) = self.evaluate(stmt.initializer()) {
-      value = initializer;
+    if let Some(initializer) = stmt.initializer() {
+      if let Ok(initializer) = self.evaluate(initializer) {
+        value = initializer;
+      }
     }
     let mut env_ref = self.environment.borrow_mut();
     env_ref.define(stmt.name().lexeme(), value);

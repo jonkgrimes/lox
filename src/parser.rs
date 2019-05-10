@@ -71,9 +71,9 @@ impl Parser {
     let name = self.consume(TokenType::Identifier, "Expected variable name").unwrap();
 
     let initializer = if self.matches(&[TokenType::Equal]) {
-      self.expression()
+      Some(self.expression())
     } else {
-      Literal::nil()
+      None
     };
 
     self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.").ok();

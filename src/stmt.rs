@@ -99,13 +99,13 @@ impl Visitable for Print {
 #[derive(Debug, Clone)]
 pub struct Var {
     name: Token,
-    initializer: BoxedExpr
+    initializer: Option<BoxedExpr>
 }
 
 impl Stmt for Var {}
 
 impl Var {
-  pub fn new(name: Token, initializer: BoxedExpr) -> Box<dyn Stmt> {
+  pub fn new(name: Token, initializer: Option<BoxedExpr>) -> Box<dyn Stmt> {
     Box::new(Var { name, initializer })
   }
 
@@ -113,7 +113,7 @@ impl Var {
     self.name.clone()
   }
 
-  pub fn initializer(&self) -> BoxedExpr {
+  pub fn initializer(&self) -> Option<BoxedExpr> {
     self.initializer.clone()
   }
 }
