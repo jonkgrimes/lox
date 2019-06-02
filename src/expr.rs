@@ -1,5 +1,6 @@
 use std::fmt::Display;
 use std::any::Any;
+use uuid::Uuid;
 
 use crate::token::Token;
 use crate::lox_value::LoxValue;
@@ -13,6 +14,8 @@ where Self: std::fmt::Display,
       Self: std::fmt::Debug,
       Self: Visitable
 {
+    fn id(&self) -> Uuid;
+
     fn as_any(&self) -> &dyn Any;
 
     fn print(&self) {
@@ -63,12 +66,13 @@ pub trait Visitor {
 
 #[derive(Debug, Clone)]
 pub struct Literal<T> {
+    id: Uuid,
     value: T
 }
 
 impl<T: Clone> Literal<T> {
     pub fn new(value: T) -> Box<Literal<T>> {
-        Box::new(Literal { value })
+        Box::new(Literal { id: Uuid::new_v4(), value })
     }
 
     pub fn value(&self) -> T {
@@ -77,6 +81,10 @@ impl<T: Clone> Literal<T> {
 }
 
 impl Expr for Literal<LoxValue> {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -102,18 +110,23 @@ impl<T: Display> Display for Literal<T> {
 
 impl Literal<LoxValue> {
     pub fn nil() -> Box<Literal<LoxValue>> {
-        Box::new(Literal { value: LoxValue::Nil })
+        Box::new(Literal { id: Uuid::new_v4(), value: LoxValue::Nil })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Logical {
+    id: Uuid,
     left: BoxedExpr,
     operator: Token,
     right: BoxedExpr
 }
 
 impl Expr for Logical {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -133,7 +146,7 @@ impl Display for Logical {
 
 impl Logical {
     pub fn new(left: BoxedExpr, operator: Token, right: BoxedExpr) -> Box<Logical> {
-        Box::new(Logical { left, operator, right })
+        Box::new(Logical { id: Uuid::new_v4(), left, operator, right })
     }
 
     pub fn left(&self) -> BoxedExpr {
@@ -151,13 +164,14 @@ impl Logical {
 
 #[derive(Debug, Clone)]
 pub struct Unary { 
+    id: Uuid,
     operator: Token,
     right: Box<dyn Expr>
 }
 
 impl Unary {
     pub fn new(operator: Token, right: Box<dyn Expr>) -> Box<Unary> {
-        Box::new(Unary { operator, right })
+        Box::new(Unary { id: Uuid::new_v4(), operator, right })
     }
 
     pub fn operator(self) -> Token {
@@ -170,6 +184,10 @@ impl Unary {
 }
 
 impl Expr for Unary {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -189,6 +207,7 @@ impl Display for Unary {
 
 #[derive(Debug, Clone)]
 pub struct Binary {
+    id: Uuid,
     left: Box<dyn Expr>,
     operator: Token,
     right: Box<dyn Expr>
@@ -196,7 +215,7 @@ pub struct Binary {
 
 impl Binary {
     pub fn new(left: Box<dyn Expr>, operator: Token, right: Box<dyn Expr>) -> Box<Binary> {
-        Box::new(Binary { left, operator, right })
+        Box::new(Binary { id: Uuid::new_v4(), left, operator, right })
     }
 
     pub fn operator(self) -> Token {
@@ -213,6 +232,10 @@ impl Binary {
 }
 
 impl Expr for Binary {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -232,12 +255,13 @@ impl Display for Binary {
 
 #[derive(Debug, Clone)]
 pub struct Grouping {
+    id: Uuid,
     expression: Box<dyn Expr>
 }
 
 impl Grouping {
     pub fn new(expression: Box<dyn Expr>) -> Box<Grouping> {
-        Box::new(Grouping { expression })
+        Box::new(Grouping { id: Uuid::new_v4(), expression })
     }
 
     pub fn expression(&self) -> BoxedExpr {
@@ -246,6 +270,10 @@ impl Grouping {
 }
 
 impl Expr for Grouping {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -265,18 +293,27 @@ impl Display for Grouping {
 
 #[derive(Debug, Clone)]
 pub struct Variable {
+    id: Uuid,
    name: Token
 }
 
 impl Expr for Variable {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
 }
 
 impl Variable {
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
     pub fn new(name: Token) -> Box<Variable> {
-        Box::new(Variable { name })
+        Box::new(Variable { id: Uuid::new_v4(), name })
     }
 
     pub fn name(&self) -> Token {
@@ -298,12 +335,17 @@ impl Display for Variable {
 
 #[derive(Debug, Clone)]
 pub struct Assign {
+    id: Uuid,
     name: Token,
     value: BoxedExpr
 }
 
 
 impl Expr for Assign {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -322,8 +364,12 @@ impl Display for Assign {
 }
 
 impl Assign {
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
     pub fn new(name: Token, value: BoxedExpr) -> Box<Assign> {
-        Box::new(Assign { name, value })
+        Box::new(Assign { id: Uuid::new_v4(), name, value })
     }
 
     pub fn name(&self) -> Token {
@@ -337,12 +383,17 @@ impl Assign {
 
 #[derive(Debug, Clone)]
 pub struct Call {
+    id: Uuid,
     callee: BoxedExpr,
     paren: Token,
     arguments: Vec<BoxedExpr>,
 }
 
 impl Expr for Call {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -362,7 +413,7 @@ impl Display for Call {
 
 impl Call {
     pub fn new(callee: BoxedExpr, paren: Token, arguments: Vec<BoxedExpr>) -> Box<Call> {
-        Box::new(Call { callee, paren, arguments })
+        Box::new(Call { id: Uuid::new_v4(), callee, paren, arguments })
     }
 
     pub fn callee(&self) -> BoxedExpr {

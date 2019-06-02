@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
 extern crate rustyline;
+extern crate uuid;
 
 use std::io;
 use std::io::BufReader;
@@ -27,6 +28,7 @@ mod environment;
 use scanner::{Scanner};
 use parser::{Parser};
 use interpreter::{Interpreter};
+use resolver::{Resolver};
 
 pub fn run_prompt() -> io::Result<()> {
     let mut rl = Editor::<()>::new();
@@ -68,6 +70,8 @@ fn run(source: &str) -> io::Result<()> {
             let mut parser = Parser::new(tokens.to_vec());
             let mut interpreter = Interpreter::new();
             let statements = parser.parse();
+            let mut resolver = Resolver::new(&mut interpreter);
+            resolver.resolve(statements.clone());
             interpreter.interpret(statements)
         },
         Err(e) => error(e.line(), e.description())

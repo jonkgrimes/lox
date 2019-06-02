@@ -3,11 +3,11 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use crate::lox_value::LoxValue;
-use crate::token::Token;
+use crate::token::{Token, TokenType};
 
 #[derive(Debug, Clone)]
 pub struct Environment {
-  enclosing: Option<Rc<RefCell<Environment>>>,
+  pub enclosing: Option<Rc<RefCell<Environment>>>,
   values: HashMap<String, LoxValue>
 }
 
@@ -49,5 +49,27 @@ impl Environment {
         }
       }
     }
+  }
+
+  pub fn get_at(&mut self, distance: usize, name: String) -> LoxValue {
+      if distance == 0 {
+        self.values.get(&name).unwrap().clone()
+      } else {
+        if let Some(enclosing) = &self.enclosing {
+            (*enclosing.borrow_mut()).get_at(distance - 1, name)
+        } else {
+            LoxValue::Nil
+        }
+      }
+  }
+
+  pub fn assign_at(&mut self, distance: usize, name: String, value: LoxValue) {
+      if distance == 0 {
+          self.values.insert(name, value.clone()).unwrap();
+      } else { 
+          if let Some(enclosing) = &self.enclosing {
+              (*enclosing.borrow_mut()).assign_at(distance - 1, name, value)
+          }
+      }
   }
 }

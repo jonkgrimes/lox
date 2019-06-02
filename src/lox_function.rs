@@ -2,13 +2,12 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::cmp::PartialEq;
 
-use crate::stmt::{BoxedStmt, Function};
+use crate::stmt::{Function};
 use crate::lox_callable::LoxCallable;
 use crate::lox_value::LoxValue;
 use crate::lox_error::LoxError;
 use crate::environment::Environment;
 use crate::interpreter::Interpreter;
-use crate::expr::BoxedExpr;
 
 #[derive(Debug, Clone)]
 pub struct LoxFunction {

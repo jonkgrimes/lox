@@ -1,6 +1,9 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use crate::token::{TokenType};
+use std::collections::HashMap;
+use uuid::Uuid;
+
+use crate::token::{Token, TokenType};
 use crate::lox_value::{LoxValue};
 use crate::lox_error::{LoxError};
 use crate::lox_callable::{LoxCallable};
@@ -9,14 +12,17 @@ use crate::stmt::{Visitor as StmtVisitor, Stmt, Expression, Print, Var, Block, I
 use crate::environment::Environment;
 use crate::lox_function::LoxFunction;
 
+#[derive(Clone)]
 pub struct Interpreter {
-  environment: Rc<RefCell<Environment>>
+  environment: Rc<RefCell<Environment>>,
+  locals: HashMap<Uuid, usize>
 }
 
 impl Interpreter {
   pub fn new() -> Interpreter {
     Interpreter {
-      environment: Rc::new(RefCell::new(Environment::new()))
+      environment: Rc::new(RefCell::new(Environment::new())),
+      locals: HashMap::new()
     }
   }
 
@@ -36,6 +42,23 @@ impl Interpreter {
 
   pub fn evaluate(&mut self, expr: BoxedExpr) -> Result<LoxValue, LoxError> {
     expr.accept(self)
+  }
+
+  pub fn resolve(&mut self, expr: BoxedExpr, depth: usize) {
+    self.locals.insert(expr.id(), depth);
+  }
+
+  fn look_up_variable(&mut self, name: Token, expr: &Variable) -> Result<LoxValue, LoxError> {
+      let distance = self.locals.get(&expr.id());
+      if let Some(dist) = distance {
+          let mut env_ref = self.environment.borrow_mut();
+          let value = env_ref.get_at(*dist, expr.name().lexeme());
+          Ok(value)
+      } else {
+          let mut env_ref = self.environment.borrow_mut();
+          let value = env_ref.get(expr.name());
+          Ok(value)
+      }
   }
 }
 
@@ -158,16 +181,21 @@ impl ExprVisitor for Interpreter {
   }
 
   fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError> {
-      let mut env_ref = self.environment.borrow_mut();
-      let value = env_ref.get(expr.name());
-      Ok(value)
+      self.look_up_variable(expr.name(), expr)
   }
 
   fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError> {
     let value = self.evaluate(expr.value()).unwrap();
-    let mut env_ref = self.environment.borrow_mut();
-    env_ref.assign(expr.name(), value.clone());
-    Ok(value)
+    let distance = self.locals.get(&expr.id());
+    if let Some(dist) = distance { 
+      let mut env_ref = self.environment.borrow_mut();
+      env_ref.assign_at(*dist, expr.name().lexeme(), value.clone());
+      Ok(value)
+    } else {
+      let mut env_ref = self.environment.borrow_mut();
+      env_ref.assign(expr.name(), value.clone());
+      Ok(value)
+    }
   }
 }
 

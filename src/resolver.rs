@@ -6,15 +6,19 @@ use crate::lox_value::LoxValue;
 use crate::lox_error::LoxError;
 use crate::token::Token;
 use crate::expr::{Visitor as ExprVisitor, BoxedExpr, Literal, Grouping, Unary, Binary, Variable, Assign, Logical, Call};
-use crate::stmt::{Visitor as StmtVisitor, BoxedStmt, Stmt, Expression, Print, Var, Block, If, While, Function, Return};
+use crate::stmt::{Visitor as StmtVisitor, BoxedStmt, Expression, Print, Var, Block, If, While, Function, Return};
 
-pub struct Resolver {
-  interpreter: Interpreter,
+pub struct Resolver<'a> {
+  interpreter: &'a mut Interpreter,
   scopes: Vec<Rc<RefCell<HashMap<String, bool>>>>
 }
 
-impl Resolver {
-  fn resolve(&mut self, statments: Vec<BoxedStmt>) {
+impl<'a> Resolver<'a> {
+  pub fn new(interpreter: &'a mut Interpreter) -> Resolver {
+    Resolver { interpreter, scopes: Vec::new() }
+  }
+
+  pub fn resolve(&mut self, statments: Vec<BoxedStmt>) {
     for statement in statments {
       self.resolve_stmt(statement)
     }
@@ -62,49 +66,49 @@ impl Resolver {
       for (index, scope_ref) in self.scopes.iter().rev().enumerate() {
           let mut scope = scope_ref.borrow();
           if scope.contains_key(&name) {
-              self.interpreter.resolve(expr, index);
+              self.interpreter.resolve(expr.clone(), index);
           }
       }
   }
 }
 
-impl ExprVisitor for Resolver {
+impl<'a> ExprVisitor for Resolver<'a> {
   type Value = LoxValue;
 
   fn visit_nil_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_number_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_string_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_boolean_literal(&mut self, expr: &Literal<LoxValue>) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_logical(&mut self, expr: &Logical) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_call(&mut self, expr: &Call) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_unary(&mut self, expr: &Unary) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_binary(&mut self, expr: &Binary) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_grouping(&mut self, expr: &Grouping) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 
   fn visit_variable(&mut self, expr: &Variable) -> Result<Self::Value, LoxError> {
@@ -120,27 +124,27 @@ impl ExprVisitor for Resolver {
   }
 
   fn visit_assignment(&mut self, expr: &Assign) -> Result<Self::Value, LoxError> {
-    unimplemented!()
+    Ok(LoxValue::Nil)
   }
 }
 
-impl StmtVisitor for Resolver {
+impl<'a> StmtVisitor for Resolver<'a> {
   type Value = Option<LoxValue>;
 
   fn visit_expression_statement(&mut self, stmt: &Expression) -> Option<LoxValue> {
-    unimplemented!()
+    None
   }
 
   fn visit_if_statement(&mut self, stmt: &If) -> Option<LoxValue> {
-    unimplemented!()
+    None
   }
 
   fn visit_print_statement(&mut self, stmt: &Print) -> Option<LoxValue> {
-    unimplemented!()
+    None
   }
 
   fn visit_return_statement(&mut self, stmt: &Return) -> Option<LoxValue> {
-    unimplemented!()
+    None
   }
 
   fn visit_var_statement(&mut self, stmt: &Var) -> Option<LoxValue> {
@@ -160,10 +164,10 @@ impl StmtVisitor for Resolver {
   }
 
   fn visit_while_statement(&mut self, stmt: &While) -> Option<LoxValue> {
-    unimplemented!()
+    None
   }
 
   fn visit_function_statement(&mut self, stmt: &Function) -> Option<LoxValue> {
-    unimplemented!()
+    None
   }
 }
