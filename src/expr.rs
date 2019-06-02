@@ -1,18 +1,19 @@
-use std::fmt::Display;
 use std::any::Any;
+use std::fmt::Display;
 use uuid::Uuid;
 
-use crate::token::Token;
-use crate::lox_value::LoxValue;
 use crate::lox_error::LoxError;
+use crate::lox_value::LoxValue;
+use crate::token::Token;
 
 pub type BoxedExpr = Box<dyn Expr>;
 pub type LoxResult = Result<LoxValue, LoxError>;
 
 pub trait Expr: CloneableExpr
-where Self: std::fmt::Display,
-      Self: std::fmt::Debug,
-      Self: Visitable
+where
+    Self: std::fmt::Display,
+    Self: std::fmt::Debug,
+    Self: Visitable,
 {
     fn id(&self) -> Uuid;
 
@@ -34,7 +35,6 @@ where
     fn clone_box(&self) -> Box<dyn Expr> {
         Box::new(self.clone())
     }
-
 }
 
 impl Clone for Box<dyn Expr> {
@@ -43,9 +43,8 @@ impl Clone for Box<dyn Expr> {
     }
 }
 
-pub trait Visitable
-{
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult;
+pub trait Visitable {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult;
 }
 
 pub trait Visitor {
@@ -67,12 +66,15 @@ pub trait Visitor {
 #[derive(Debug, Clone)]
 pub struct Literal<T> {
     id: Uuid,
-    value: T
+    value: T,
 }
 
 impl<T: Clone> Literal<T> {
     pub fn new(value: T) -> Box<Literal<T>> {
-        Box::new(Literal { id: Uuid::new_v4(), value })
+        Box::new(Literal {
+            id: Uuid::new_v4(),
+            value,
+        })
     }
 
     pub fn value(&self) -> T {
@@ -91,13 +93,13 @@ impl Expr for Literal<LoxValue> {
 }
 
 impl Visitable for Literal<LoxValue> {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult {
         match self.value() {
             LoxValue::Nil => visitor.visit_nil_literal(self),
             LoxValue::Number(_number) => visitor.visit_number_literal(self),
             LoxValue::String(_string) => visitor.visit_string_literal(self),
             LoxValue::Boolean(_boolean) => visitor.visit_boolean_literal(self),
-            LoxValue::Function(_function) => panic!("Can't evaluate a function as a literal value")
+            LoxValue::Function(_function) => panic!("Can't evaluate a function as a literal value"),
         }
     }
 }
@@ -110,7 +112,10 @@ impl<T: Display> Display for Literal<T> {
 
 impl Literal<LoxValue> {
     pub fn nil() -> Box<Literal<LoxValue>> {
-        Box::new(Literal { id: Uuid::new_v4(), value: LoxValue::Nil })
+        Box::new(Literal {
+            id: Uuid::new_v4(),
+            value: LoxValue::Nil,
+        })
     }
 }
 
@@ -119,7 +124,7 @@ pub struct Logical {
     id: Uuid,
     left: BoxedExpr,
     operator: Token,
-    right: BoxedExpr
+    right: BoxedExpr,
 }
 
 impl Expr for Logical {
@@ -133,7 +138,7 @@ impl Expr for Logical {
 }
 
 impl Visitable for Logical {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult {
         visitor.visit_logical(self)
     }
 }
@@ -146,7 +151,12 @@ impl Display for Logical {
 
 impl Logical {
     pub fn new(left: BoxedExpr, operator: Token, right: BoxedExpr) -> Box<Logical> {
-        Box::new(Logical { id: Uuid::new_v4(), left, operator, right })
+        Box::new(Logical {
+            id: Uuid::new_v4(),
+            left,
+            operator,
+            right,
+        })
     }
 
     pub fn left(&self) -> BoxedExpr {
@@ -163,15 +173,19 @@ impl Logical {
 }
 
 #[derive(Debug, Clone)]
-pub struct Unary { 
+pub struct Unary {
     id: Uuid,
     operator: Token,
-    right: Box<dyn Expr>
+    right: Box<dyn Expr>,
 }
 
 impl Unary {
     pub fn new(operator: Token, right: Box<dyn Expr>) -> Box<Unary> {
-        Box::new(Unary { id: Uuid::new_v4(), operator, right })
+        Box::new(Unary {
+            id: Uuid::new_v4(),
+            operator,
+            right,
+        })
     }
 
     pub fn operator(self) -> Token {
@@ -194,7 +208,7 @@ impl Expr for Unary {
 }
 
 impl Visitable for Unary {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult {
         visitor.visit_unary(self)
     }
 }
@@ -210,12 +224,17 @@ pub struct Binary {
     id: Uuid,
     left: Box<dyn Expr>,
     operator: Token,
-    right: Box<dyn Expr>
+    right: Box<dyn Expr>,
 }
 
 impl Binary {
     pub fn new(left: Box<dyn Expr>, operator: Token, right: Box<dyn Expr>) -> Box<Binary> {
-        Box::new(Binary { id: Uuid::new_v4(), left, operator, right })
+        Box::new(Binary {
+            id: Uuid::new_v4(),
+            left,
+            operator,
+            right,
+        })
     }
 
     pub fn operator(self) -> Token {
@@ -242,7 +261,7 @@ impl Expr for Binary {
 }
 
 impl Visitable for Binary {
-    fn accept(&self, visitor: &mut dyn Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut dyn Visitor<Value = LoxValue>) -> LoxResult {
         visitor.visit_binary(self)
     }
 }
@@ -256,12 +275,15 @@ impl Display for Binary {
 #[derive(Debug, Clone)]
 pub struct Grouping {
     id: Uuid,
-    expression: Box<dyn Expr>
+    expression: Box<dyn Expr>,
 }
 
 impl Grouping {
     pub fn new(expression: Box<dyn Expr>) -> Box<Grouping> {
-        Box::new(Grouping { id: Uuid::new_v4(), expression })
+        Box::new(Grouping {
+            id: Uuid::new_v4(),
+            expression,
+        })
     }
 
     pub fn expression(&self) -> BoxedExpr {
@@ -280,7 +302,7 @@ impl Expr for Grouping {
 }
 
 impl Visitable for Grouping {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult {
         visitor.visit_grouping(self)
     }
 }
@@ -294,7 +316,7 @@ impl Display for Grouping {
 #[derive(Debug, Clone)]
 pub struct Variable {
     id: Uuid,
-   name: Token
+    name: Token,
 }
 
 impl Expr for Variable {
@@ -313,7 +335,10 @@ impl Variable {
     }
 
     pub fn new(name: Token) -> Box<Variable> {
-        Box::new(Variable { id: Uuid::new_v4(), name })
+        Box::new(Variable {
+            id: Uuid::new_v4(),
+            name,
+        })
     }
 
     pub fn name(&self) -> Token {
@@ -322,7 +347,7 @@ impl Variable {
 }
 
 impl Visitable for Variable {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult {
         visitor.visit_variable(self)
     }
 }
@@ -337,9 +362,8 @@ impl Display for Variable {
 pub struct Assign {
     id: Uuid,
     name: Token,
-    value: BoxedExpr
+    value: BoxedExpr,
 }
-
 
 impl Expr for Assign {
     fn id(&self) -> Uuid {
@@ -352,7 +376,7 @@ impl Expr for Assign {
 }
 
 impl Visitable for Assign {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult {
         visitor.visit_assignment(self)
     }
 }
@@ -369,7 +393,11 @@ impl Assign {
     }
 
     pub fn new(name: Token, value: BoxedExpr) -> Box<Assign> {
-        Box::new(Assign { id: Uuid::new_v4(), name, value })
+        Box::new(Assign {
+            id: Uuid::new_v4(),
+            name,
+            value,
+        })
     }
 
     pub fn name(&self) -> Token {
@@ -400,7 +428,7 @@ impl Expr for Call {
 }
 
 impl Visitable for Call {
-    fn accept(&self, visitor: &mut Visitor<Value=LoxValue>) -> LoxResult {
+    fn accept(&self, visitor: &mut Visitor<Value = LoxValue>) -> LoxResult {
         visitor.visit_call(self)
     }
 }
@@ -413,7 +441,12 @@ impl Display for Call {
 
 impl Call {
     pub fn new(callee: BoxedExpr, paren: Token, arguments: Vec<BoxedExpr>) -> Box<Call> {
-        Box::new(Call { id: Uuid::new_v4(), callee, paren, arguments })
+        Box::new(Call {
+            id: Uuid::new_v4(),
+            callee,
+            paren,
+            arguments,
+        })
     }
 
     pub fn callee(&self) -> BoxedExpr {

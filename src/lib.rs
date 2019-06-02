@@ -3,32 +3,32 @@ extern crate lazy_static;
 extern crate rustyline;
 extern crate uuid;
 
-use std::io;
-use std::io::BufReader;
-use std::io::prelude::*;
-use std::fs::File;
 use std::error::Error;
+use std::fs::File;
+use std::io;
+use std::io::prelude::*;
+use std::io::BufReader;
 
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 
-mod scanner;
-mod token;
-mod expr;
-mod stmt;
-mod parser;
-mod interpreter;
-mod resolver;
-mod lox_value;
-mod lox_error;
-mod lox_callable;
-mod lox_function;
 mod environment;
+mod expr;
+mod interpreter;
+mod lox_callable;
+mod lox_error;
+mod lox_function;
+mod lox_value;
+mod parser;
+mod resolver;
+mod scanner;
+mod stmt;
+mod token;
 
-use scanner::{Scanner};
-use parser::{Parser};
-use interpreter::{Interpreter};
-use resolver::{Resolver};
+use interpreter::Interpreter;
+use parser::Parser;
+use resolver::Resolver;
+use scanner::Scanner;
 
 pub fn run_prompt() -> io::Result<()> {
     let mut rl = Editor::<()>::new();
@@ -39,14 +39,14 @@ pub fn run_prompt() -> io::Result<()> {
             Ok(line) => {
                 rl.add_history_entry(line.as_ref());
                 run(&line)?
-            },
+            }
             Err(ReadlineError::Interrupted) => {
                 println!("Exiting...");
-                break
-            },
+                break;
+            }
             Err(err) => {
                 eprintln!("Unrecoverable error: {:?}", err);
-                break
+                break;
             }
         }
     }
@@ -71,10 +71,10 @@ fn run(source: &str) -> io::Result<()> {
             let mut interpreter = Interpreter::new();
             let statements = parser.parse();
             let mut resolver = Resolver::new(&mut interpreter);
-            resolver.resolve(statements.clone());
+            resolver.resolve(&statements);
             interpreter.interpret(statements)
-        },
-        Err(e) => error(e.line(), e.description())
+        }
+        Err(e) => error(e.line(), e.description()),
     }
     Ok(())
 }
@@ -84,5 +84,10 @@ fn error(line: u32, message: &str) {
 }
 
 fn report(line: u32, location: &str, message: &str) {
-    eprintln!("[line {line}] Error{location}: {message}", line=line, location=location, message=message)
+    eprintln!(
+        "[line {line}] Error{location}: {message}",
+        line = line,
+        location = location,
+        message = message
+    )
 }
