@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::lox_value::LoxValue;
-use crate::token::{Token, TokenType};
+use crate::token::Token;
 
 #[derive(Debug, Clone)]
 pub struct Environment {
@@ -33,12 +33,10 @@ impl Environment {
     pub fn get(&mut self, name: Token) -> LoxValue {
         if let Some(value) = self.values.get(&name.lexeme()) {
             value.clone()
+        } else if let Some(enclosing) = &self.enclosing {
+            return (*enclosing.borrow_mut()).get(name.clone());
         } else {
-            if let Some(enclosing) = &self.enclosing {
-                return (*enclosing.borrow_mut()).get(name.clone());
-            } else {
-                LoxValue::Nil
-            }
+            LoxValue::Nil
         }
     }
 
@@ -59,12 +57,10 @@ impl Environment {
     pub fn get_at(&mut self, distance: usize, name: String) -> LoxValue {
         if distance == 0 {
             self.values.get(&name).unwrap().clone()
+        } else if let Some(enclosing) = &self.enclosing {
+            (*enclosing.borrow_mut()).get_at(distance - 1, name)
         } else {
-            if let Some(enclosing) = &self.enclosing {
-                (*enclosing.borrow_mut()).get_at(distance - 1, name)
-            } else {
-                LoxValue::Nil
-            }
+            LoxValue::Nil
         }
     }
 

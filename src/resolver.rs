@@ -26,14 +26,16 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    pub fn resolve(&mut self, statments: &Vec<BoxedStmt>) {
+    pub fn resolve(&mut self, statments: &Vec<BoxedStmt>) -> Result<(), LoxError> {
         for statement in statments {
-            self.resolve_stmt(statement)
+            self.resolve_stmt(statement);
         }
+        Ok(())
     }
 
-    fn resolve_stmt(&mut self, stmt: &BoxedStmt) {
+    fn resolve_stmt(&mut self, stmt: &BoxedStmt) -> Result<(), LoxError> {
         stmt.accept(self);
+        Ok(())
     }
 
     fn resolve_expr(&mut self, expr: &BoxedExpr) {

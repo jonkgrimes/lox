@@ -53,7 +53,7 @@ impl Interpreter {
         self.locals.insert(expr.id(), depth);
     }
 
-    fn look_up_variable(&mut self, name: Token, expr: &Variable) -> Result<LoxValue, LoxError> {
+    fn look_up_variable(&mut self, _name: Token, expr: &Variable) -> Result<LoxValue, LoxError> {
         let distance = self.locals.get(&expr.id());
         if let Some(dist) = distance {
             let mut env_ref = self.environment.borrow_mut();
@@ -92,12 +92,12 @@ impl ExprVisitor for Interpreter {
 
         if expr.operator().token_type() == TokenType::Or {
             match is_truthy {
-                LoxValue::Boolean(true) => return Ok(left),
+                LoxValue::Boolean(true) => Ok(left),
                 _ => self.evaluate(expr.right()),
             }
         } else {
             match is_truthy {
-                LoxValue::Boolean(false) => return Ok(left),
+                LoxValue::Boolean(false) => Ok(left),
                 _ => self.evaluate(expr.right()),
             }
         }

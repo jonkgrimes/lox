@@ -71,7 +71,7 @@ fn run(source: &str) -> io::Result<()> {
             let mut interpreter = Interpreter::new();
             let statements = parser.parse();
             let mut resolver = Resolver::new(&mut interpreter);
-            resolver.resolve(&statements);
+            resolver.resolve(&statements).ok();
             interpreter.interpret(statements)
         }
         Err(e) => error(e.line(), e.description()),
